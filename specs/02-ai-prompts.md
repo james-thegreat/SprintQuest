@@ -73,10 +73,7 @@ backend/
   SprintQuest.Domain
   SprintQuest.Infrastructure
   SprintQuest.Tests
-
-
-
-
+```
 
 # SprintQuest — Milestone 1: M1 - Backend Solution Setup
 
