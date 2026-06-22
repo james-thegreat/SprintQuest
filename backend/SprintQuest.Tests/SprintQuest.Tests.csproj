@@ -18,4 +18,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SprintQuest.Domain\SprintQuest.Domain.csproj" />
+    <ProjectReference Include="..\SprintQuest.Application\SprintQuest.Application.csproj" />
+    <ProjectReference Include="..\SprintQuest.Infrastructure\SprintQuest.Infrastructure.csproj" />
+    <ProjectReference Include="..\SprintQuest.Api\SprintQuest.Api.csproj" />
+  </ItemGroup>
+
 </Project>

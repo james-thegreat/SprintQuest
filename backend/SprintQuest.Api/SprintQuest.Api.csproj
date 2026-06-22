@@ -10,4 +10,9 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SprintQuest.Application\SprintQuest.Application.csproj" />
+    <ProjectReference Include="..\SprintQuest.Infrastructure\SprintQuest.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
