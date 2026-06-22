@@ -108,3 +108,77 @@ Follow my project rules:
 * Do not give me the whole project at once
 * Teach me the architecture as we go
 * After each coding step, explain what changed, why it matters, where it fits architecturally, how to test it, and when to commit
+
+
+
+# SprintQuest — Milestone 2: M2 - Core Domain Models
+
+
+I have completed M1 - Backend Solution Setup for SprintQuest.
+
+Completed:
+
+* Created the `backend` folder
+* Created `SprintQuest.sln`
+* Created backend projects:
+
+  * `SprintQuest.Api`
+  * `SprintQuest.Application`
+  * `SprintQuest.Domain`
+  * `SprintQuest.Infrastructure`
+  * `SprintQuest.Tests`
+* Added all projects to the solution
+* Configured project references using Clean Architecture dependency direction
+* Confirmed `SprintQuest.Domain` has no dependencies
+* Installed/confirmed .NET 10 SDK
+* Confirmed `dotnet build` passes
+* Added a first backend smoke test
+* Confirmed `dotnet test` passes
+* Updated M1 architecture/design/AI prompt notes in `/specs`
+* Opened and merged the M1 PR into `develop`
+
+Current repo state:
+
+* `main` branch exists
+* `develop` branch includes completed M0 and M1 work
+* latest completed branch: `feature/backend-solution-setup`
+* working tree is clean on `develop`
+
+Please start M2 - Core Domain Models with me.
+
+Follow my project rules:
+
+* Explain why before what
+* Work step by step
+* Create GitHub user stories/issues first
+* Include Git workflow guidance
+* Do not give me the whole project at once
+* Teach me the architecture as we go
+* After each coding step, explain:
+
+  * what changed
+  * why it matters
+  * where it fits architecturally
+  * how to test it
+  * when to commit
+
+For M2, I want to create the core SprintQuest domain models:
+
+* Project
+* Sprint
+* TaskItem
+* ChecklistItem
+* Achievement
+* XpEvent
+* TaskStatus enum
+* Priority enum
+
+I also want to learn:
+
+* entities vs DTOs
+* why business rules belong in the Domain layer
+* how domain methods work
+* how to unit test domain behavior
+* how this connects to the later EF Core and API milestones
+
+Please begin M2 by helping me create the GitHub user stories/issues first, then guide me through the Git branch setup and first small coding step.
