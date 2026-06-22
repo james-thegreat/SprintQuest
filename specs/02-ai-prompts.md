@@ -73,3 +73,41 @@ backend/
   SprintQuest.Domain
   SprintQuest.Infrastructure
   SprintQuest.Tests
+
+
+
+
+
+# SprintQuest — Milestone 1: M1 - Backend Solution Setup
+
+I have completed M0 - Planning & Repository Setup for SprintQuest.
+
+Completed:
+
+* Created the SprintQuest GitHub repository
+* Created `main` and `develop` branches
+* Created and merged the `docs/project-setup` branch
+* Added README skeleton
+* Added `/specs` folder
+* Added planning/spec placeholder files
+* Opened and merged the first PR into `develop`
+* Confirmed local repo is clean on `develop`
+
+Current repo state:
+
+* `main` branch exists
+* `develop` branch is up to date with `origin/develop`
+* latest completed branch: `docs/project-setup`
+* working tree is clean
+
+Please start M1 - Backend Solution Setup with me.
+
+Follow my project rules:
+
+* Explain why before what
+* Work step by step
+* Create GitHub user stories/issues first
+* Include Git workflow guidance
+* Do not give me the whole project at once
+* Teach me the architecture as we go
+* After each coding step, explain what changed, why it matters, where it fits architecturally, how to test it, and when to commit
