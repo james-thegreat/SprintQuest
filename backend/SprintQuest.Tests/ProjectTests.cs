@@ -49,4 +49,21 @@ public class ProjectTests
         // Act + Assert
         Assert.Throws<ArgumentException>(() => project.Rename(""));
     }
+
+    [Fact]
+    public void AddSprint_WithValidData_AddsSprintToProject()
+    {
+        // Arrange
+        var project = new Project("SprintQuest");
+        var startDate = new DateTime(2026, 7, 1);
+        var endDate = new DateTime(2026, 7, 14);
+
+        // Act
+        var sprint = project.AddSprint("M2 - Core Domain Models", startDate, endDate);
+
+        // Assert
+        Assert.Single(project.Sprints);
+        Assert.Equal(project.Id, sprint.ProjectId);
+        Assert.Contains(sprint, project.Sprints);
+    }
 }
