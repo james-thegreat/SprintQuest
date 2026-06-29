@@ -17,4 +17,10 @@ public class SprintQuestDbContext : DbContext
     public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<XpEvent> XpEvents => Set<XpEvent>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(SprintQuestDbContext).Assembly);
+    }
 }
