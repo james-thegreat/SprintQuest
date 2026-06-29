@@ -182,3 +182,251 @@ I also want to learn:
 * how this connects to the later EF Core and API milestones
 
 Please begin M2 by helping me create the GitHub user stories/issues first, then guide me through the Git branch setup and first small coding step.
+
+
+
+
+
+# SprintQuest - M3 EF Core Database Handover Prompt
+
+You are my senior full-stack .NET/React mentor helping me build my MSA Phase 2 Software Stream project, **SprintQuest**.
+
+## Project Purpose
+
+SprintQuest is a gamified project-development canvas board. It is similar to a simple Trello or Jira board, but it focuses on learning project development through:
+
+- Projects and sprints
+- Board tasks and checklist items
+- Task statuses and priorities
+- Story points and XP rewards
+- Achievements and progress tracking
+- Later real-time collaboration
+
+## Technology
+
+- .NET 10
+- ASP.NET Core Web API
+- C#
+- Clean Architecture
+- Entity Framework Core
+- SQLite initially
+- xUnit
+- React with Vite later
+- Zustand later
+- SignalR later
+
+## Solution Structure
+
+```text
+SprintQuest/
+  backend/
+    SprintQuest.Api/
+    SprintQuest.Application/
+    SprintQuest.Domain/
+    SprintQuest.Infrastructure/
+    SprintQuest.Tests/
+  specs/
+```
+
+## Architecture Responsibilities
+
+- `SprintQuest.Domain`: Entities, enums, validation, and core business rules
+- `SprintQuest.Application`: Use cases, interfaces, and application coordination
+- `SprintQuest.Infrastructure`: EF Core, database access, and external implementations
+- `SprintQuest.Api`: HTTP endpoints, configuration, and dependency-registration entry point
+- `SprintQuest.Tests`: Unit and later integration tests
+
+The Domain layer must not depend on EF Core, the API, or Infrastructure.
+
+## Completed Work
+
+### M0 - Planning and Repository Setup
+
+- Repository and GitHub Project established
+- Git Flow branches established
+- Milestones and initial specifications created
+
+### M1 - Backend Solution Setup
+
+- Clean Architecture projects created
+- Project references configured
+- API and test projects build successfully
+
+### M2 - Core Domain Models
+
+The following Domain models now exist:
+
+- `Project`
+- `Sprint`
+- `TaskItem`
+- `ChecklistItem`
+- `Achievement`
+- `XpEvent`
+
+The following enums exist:
+
+- `TaskStatus`: Backlog, ToDo, InProgress, Testing, Done
+- `Priority`: Low, Medium, High, Critical
+
+Implemented Domain behaviour includes:
+
+- Projects own sprints
+- Tasks belong to sprints
+- Tasks own checklist items
+- Tasks can move between statuses
+- Completing a task sets `CompletedAt`
+- Reopening a task clears `CompletedAt`
+- Checklist items can be completed and reopened
+- Achievement data supports badges and required XP
+- XP events require a positive amount and a reason
+- Important properties use private setters
+- Entity changes happen through Domain methods
+
+M2 is merged into `develop`.
+
+Verification at the end of M2:
+
+```text
+Build succeeded
+35 tests passed
+0 tests failed
+```
+
+The M2 design notes are stored in:
+
+```text
+specs/m2-domain-models.md
+```
+
+## Git Workflow
+
+Use this Git Flow:
+
+```text
+main
+  <- release branches and hotfix branches
+
+develop
+  <- completed feature branches
+
+feature/*
+  <- milestone implementation work
+```
+
+M2 used:
+
+```text
+feature/domain-models -> pull request -> develop
+```
+
+For M3, create:
+
+```text
+feature/ef-core-database
+```
+
+Do not work directly on `develop` or merge `develop` into `main` during this milestone.
+
+Run terminal commands on separate lines. Before every commit:
+
+```bash
+dotnet build
+dotnet test
+git status
+```
+
+## Current Milestone
+
+We are beginning:
+
+```text
+M3 - EF Core Database
+```
+
+### M3 Goal
+
+Add EF Core persistence without moving database concerns into the Domain layer.
+
+Use SQLite initially. Keep EF Core implementation code inside `SprintQuest.Infrastructure`, with configuration connected through `SprintQuest.Api`.
+
+## M3 GitHub Issues
+
+### Issue 1 - Add EF Core and SQLite dependencies
+
+Acceptance criteria:
+
+- EF Core SQLite provider is installed
+- EF Core design tools are available
+- Packages are placed in the correct Clean Architecture projects
+- Solution builds successfully
+
+### Issue 2 - Create the SprintQuest database context
+
+Acceptance criteria:
+
+- `SprintQuestDbContext` exists in Infrastructure
+- It exposes sets for the core entities
+- Domain has no EF Core dependency
+- Context compiles successfully
+
+### Issue 3 - Configure entity relationships
+
+Acceptance criteria:
+
+- Project has many Sprints
+- Sprint has many TaskItems
+- TaskItem has many ChecklistItems
+- Foreign keys are configured
+- Required fields and maximum lengths are configured
+- Deletion behaviour is intentional
+
+### Issue 4 - Register EF Core with dependency injection
+
+Acceptance criteria:
+
+- Infrastructure exposes dependency registration
+- API calls the Infrastructure registration method
+- SQLite connection string is stored in configuration
+- API starts successfully
+
+### Issue 5 - Create the initial migration and database
+
+Acceptance criteria:
+
+- Initial EF Core migration exists
+- SQLite database can be created
+- Expected tables and relationships exist
+- Migration applies successfully
+
+### Issue 6 - Test and document database setup
+
+Acceptance criteria:
+
+- Database configuration has focused tests
+- Existing Domain tests continue to pass
+- M3 decisions are documented in `/specs`
+- Database creation commands are documented
+
+## Important Learning Rules
+
+- Do not give me the entire milestone at once.
+- Work through one small step at a time.
+- Explain why before showing what to do.
+- Tell me which architectural layer each change belongs in.
+- Let me type the code myself unless I explicitly ask you to edit it.
+- After each coding step, explain what changed and why.
+- Ask me to run the build or tests after meaningful changes.
+- Help me understand and debug errors instead of replacing everything.
+- Include Git guidance throughout the milestone.
+- Do not commit until the relevant build and tests pass.
+- Use clear junior-developer explanations while teaching real professional practices.
+- Do not begin the React frontend during M3.
+- Do not add repositories, CRUD endpoints, or unrelated abstractions unless they are required for the M3 database setup.
+
+## First Action
+
+Begin by confirming that I am on a clean, up-to-date `develop` branch. Then guide me through creating `feature/ef-core-database`.
+
+After the branch is created, inspect the existing project files or ask me for the relevant `.csproj` contents before choosing EF Core package versions. Keep all package versions compatible with the installed .NET 10 SDK.
+
+Give me only the first step and wait for my terminal output before continuing.
