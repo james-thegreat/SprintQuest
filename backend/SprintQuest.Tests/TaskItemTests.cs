@@ -106,4 +106,19 @@ public class TaskItemTests
         Assert.Equal(DomainTaskStatus.InProgress, task.Status);
         Assert.Null(task.CompletedAt);
     }
+
+    [Fact]
+    public void AddChecklistItem_WithValidTitle_AddsChecklistItemToTask()
+    {
+        // Arrange
+        var task = new TaskItem(Guid.NewGuid(), "Build checklist support");
+
+        // Act
+        var checklistItem = task.AddChecklistItem("Write ChecklistItem entity");
+
+        // Assert
+        Assert.Single(task.ChecklistItems);
+        Assert.Equal(task.Id, checklistItem.TaskItemId);
+        Assert.Contains(checklistItem, task.ChecklistItems);
+    }
 }

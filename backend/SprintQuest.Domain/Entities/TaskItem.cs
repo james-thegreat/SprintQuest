@@ -5,6 +5,8 @@ namespace SprintQuest.Domain.Entities;
 
 public class TaskItem
 {
+    private readonly List<ChecklistItem> _checklistItems = new();
+    
     public Guid Id { get; private set; }
     public Guid SprintId { get; private set; }
     public string Title { get; private set; }
@@ -15,6 +17,7 @@ public class TaskItem
     public int XpReward { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
+    public IReadOnlyCollection<ChecklistItem> ChecklistItems => _checklistItems.AsReadOnly();
 
     public TaskItem(
         Guid sprintId,
@@ -92,5 +95,14 @@ public class TaskItem
     public void Reopen()
     {
         MoveToStatus(DomainTaskStatus.ToDo);
+    }
+
+    public ChecklistItem AddChecklistItem(string title)
+    {
+        var checklistItem = new ChecklistItem(Id, title);
+
+        _checklistItems.Add(checklistItem);
+
+        return checklistItem;
     }
 }
