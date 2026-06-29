@@ -1,0 +1,6 @@
+@SprintQuest.Api_HostAddress = http://localhost:5087
+
+GET {{SprintQuest.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
