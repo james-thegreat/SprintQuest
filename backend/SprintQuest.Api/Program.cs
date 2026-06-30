@@ -1,14 +1,19 @@
+using SprintQuest.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var databaseConnectionString = builder.Configuration.GetConnectionString(
+    "SprintQuestDatabase")
+    ?? throw new InvalidOperationException(
+        "Connection string 'SprintQuestDatabase' was not found.");
+
+builder.Services.AddInfrastructure(databaseConnectionString!);
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
