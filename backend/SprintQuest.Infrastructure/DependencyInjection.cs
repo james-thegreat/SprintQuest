@@ -19,6 +19,8 @@ public static class DependencyInjection
                 nameof(connectionString));
         }
 
+        services.AddScoped<ISprintService, SprintService>();
+
         services.AddScoped<IProjectService, ProjectService>();
 
         services.AddDbContext<SprintQuestDbContext>(options =>
