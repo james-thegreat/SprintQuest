@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SprintQuest.Infrastructure.Persistence;
+using SprintQuest.Application.Interfaces;
+using SprintQuest.Infrastructure.Services;
 
 namespace SprintQuest.Infrastructure;
 
@@ -16,6 +18,8 @@ public static class DependencyInjection
                 "Database connection string is required.",
                 nameof(connectionString));
         }
+
+        services.AddScoped<IProjectService, ProjectService>();
 
         services.AddDbContext<SprintQuestDbContext>(options =>
             options.UseSqlite(connectionString));
