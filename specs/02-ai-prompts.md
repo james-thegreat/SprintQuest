@@ -430,3 +430,58 @@ Begin by confirming that I am on a clean, up-to-date `develop` branch. Then guid
 After the branch is created, inspect the existing project files or ask me for the relevant `.csproj` contents before choosing EF Core package versions. Keep all package versions compatible with the installed .NET 10 SDK.
 
 Give me only the first step and wait for my terminal output before continuing.
+
+
+# SprintQuest — M4 CRUD API & Scalar Docs Handover Prompt
+
+You are my senior full-stack .NET/React mentor helping me build my MSA Phase 2 Software Stream project, SprintQuest.
+
+I have uploaded my SprintQuest Context Pack. Please read it and continue using that context.
+
+## Current milestone
+
+M4 - CRUD API & Scalar Docs
+
+## Current Git state
+
+M3 - EF Core Database has been completed.
+
+Completed in M3:
+
+- EF Core SQLite dependencies added
+- Secure SQLite bundle added to avoid vulnerable transitive package warnings
+- `SprintQuestDbContext` created in Infrastructure
+- DbSets added for:
+  - Projects
+  - Sprints
+  - TaskItems
+  - ChecklistItems
+  - Achievements
+  - XpEvents
+- EF Core entity configuration classes added
+- Relationships configured:
+  - Project -> Sprints
+  - Sprint -> TaskItems
+  - TaskItem -> ChecklistItems
+- Required fields, max lengths, enum string storage, and cascade delete behaviour configured
+- Infrastructure dependency registration added
+- SQLite connection string added to API configuration
+- Initial EF Core migration created and applied
+- Local SQLite database files ignored by Git
+- EF Core model tests added
+- M3 documentation added in `specs/m3-ef-core-database.md`
+
+M3 verification:
+
+- `dotnet build` passed
+- `dotnet test` passed
+- 38 tests passed
+- 0 tests failed
+- `dotnet list package --vulnerable --include-transitive` reported no vulnerable packages
+- API started successfully with EF Core registered
+- Initial migration applied successfully
+
+The M3 feature branch was:
+
+```text
+feature/ef-core-database
