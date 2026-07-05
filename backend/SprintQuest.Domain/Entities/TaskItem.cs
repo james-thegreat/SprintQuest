@@ -73,6 +73,35 @@ public class TaskItem
         Description = description?.Trim();
     }
 
+    public void UpdateDetails(
+        string title,
+        string? description,
+        Priority priority,
+        int storyPoints,
+        int xpReward)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException("Task title is required.", nameof(title));
+        }
+
+        if (storyPoints < 0)
+        {
+            throw new ArgumentException("Story points cannot be negative.", nameof(storyPoints));
+        }
+
+        if (xpReward < 0)
+        {
+            throw new ArgumentException("XP reward cannot be negative.", nameof(xpReward));
+        }
+
+        Title = title.Trim();
+        Description = description?.Trim();
+        Priority = priority;
+        StoryPoints = storyPoints;
+        XpReward = xpReward;
+    }
+
     public void MoveToStatus(DomainTaskStatus newStatus)
     {
         Status = newStatus;
