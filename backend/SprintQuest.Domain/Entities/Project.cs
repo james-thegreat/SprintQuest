@@ -47,4 +47,17 @@ public class Project
 
         return sprint;
     }
+
+    public void UpdateDetails(string name, string? description)
+{
+    if (string.IsNullOrWhiteSpace(name))
+    {
+        throw new ArgumentException("Project name is required.", nameof(name));
+    }
+
+    Name = name.Trim();
+    Description = string.IsNullOrWhiteSpace(description)
+        ? null
+        : description.Trim();
+}
 }
