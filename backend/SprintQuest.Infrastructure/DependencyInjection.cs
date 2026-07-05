@@ -25,6 +25,8 @@ public static class DependencyInjection
 
         services.AddScoped<ITaskItemService, TaskItemService>();
 
+        services.AddScoped<IChecklistItemService, ChecklistItemService>();
+
         services.AddDbContext<SprintQuestDbContext>(options =>
             options.UseSqlite(connectionString));
 
