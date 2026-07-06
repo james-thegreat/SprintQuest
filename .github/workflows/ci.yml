@@ -1,0 +1,64 @@
+name: SprintQuest CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  backend:
+    name: Backend build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore backend
+        working-directory: backend
+        run: dotnet restore
+
+      - name: Build backend
+        working-directory: backend
+        run: dotnet build --no-restore
+
+      - name: Test backend
+        working-directory: backend
+        run: dotnet test --no-build
+
+      - name: Check backend vulnerable packages
+        working-directory: backend
+        run: dotnet list package --vulnerable --include-transitive
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/sprintquest-ui/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend/sprintquest-ui
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend/sprintquest-ui
+        run: npm run build
