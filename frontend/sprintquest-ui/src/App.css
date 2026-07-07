@@ -245,3 +245,19 @@
     grid-template-columns: repeat(5, 240px);
   }
 }
+
+.board-message {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  text-align: left;
+}
+
+.board-message-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}

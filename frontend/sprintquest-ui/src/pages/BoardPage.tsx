@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { getTasks } from '../api/tasksApi';
 import {
   taskPriorityLabels,
   taskStatusLabels,
@@ -49,6 +51,27 @@ const sampleTasks: SprintTask[] = [
 ];
 
 export function BoardPage() {
+
+    const [tasks, setTasks] = useState<SprintTask[]>(sampleTasks);
+    const [isLoading, setIsLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+    async function loadTasks() {
+        try {
+        const apiTasks = await getTasks();
+        setTasks(apiTasks);
+        } catch {
+        setErrorMessage('Could not load tasks from the API. Showing sample board data for now.');
+        setTasks(sampleTasks);
+        } finally {
+        setIsLoading(false);
+        }
+    }
+
+    void loadTasks();
+    }, []);
+
   return (
     <section>
       <header className="page-header">
@@ -59,9 +82,12 @@ export function BoardPage() {
         </p>
       </header>
 
+      {isLoading && <p className="board-message">Loading board tasks...</p>}
+{errorMessage && <p className="board-message board-message-error">{errorMessage}</p>}
+    
       <div className="board-grid">
         {taskStatuses.map((column) => {
-          const columnTasks = sampleTasks.filter((task) => task.status === column);
+          const columnTasks = tasks.filter((task) => task.status === column);
 
           return (
             <section className="board-column" key={column}>
