@@ -10,6 +10,10 @@
 *.userosscache
 *.sln.docstates
 *.env
+.env.development
+.env.local
+frontend/sprintquest-ui/.env.development
+frontend/sprintquest-ui/.env.local
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
