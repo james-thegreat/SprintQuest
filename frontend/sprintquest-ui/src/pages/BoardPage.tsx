@@ -1,16 +1,4 @@
-type TaskStatus = 'Backlog' | 'To Do' | 'In Progress' | 'Testing' | 'Done';
-
-type SprintTask = {
-  id: number;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  priority: 'Low' | 'Medium' | 'High';
-  storyPoints: number;
-  xpReward: number;
-};
-
-const boardColumns: TaskStatus[] = ['Backlog', 'To Do', 'In Progress', 'Testing', 'Done'];
+import { taskStatuses, type SprintTask } from '../types/task';
 
 const sampleTasks: SprintTask[] = [
   {
@@ -63,7 +51,7 @@ export function BoardPage() {
       </header>
 
       <div className="board-grid">
-        {boardColumns.map((column) => {
+        {taskStatuses.map((column) => {
           const columnTasks = sampleTasks.filter((task) => task.status === column);
 
           return (
