@@ -2,6 +2,8 @@ export type TaskStatus = 0 | 1 | 2 | 3 | 4;
 
 export type TaskPriority = 0 | 1 | 2 | 3;
 
+export const taskPriorities: TaskPriority[] = [0, 1, 2, 3];
+
 export type SprintTask = {
   id: string;
   sprintId: string;
