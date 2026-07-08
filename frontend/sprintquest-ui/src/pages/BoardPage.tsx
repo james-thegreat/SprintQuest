@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { getTasks } from '../api/tasksApi';
+import { getTasks, updateTask } from '../api/tasksApi';
 import {
   taskPriorityLabels,
   taskStatusLabels,
   taskStatuses,
   type SprintTask,
+  type TaskStatus,
 } from '../types/task';
 
 const sampleTasks: SprintTask[] = [
@@ -57,20 +58,52 @@ export function BoardPage() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
-    async function loadTasks() {
-        try {
-        const apiTasks = await getTasks();
-        setTasks(apiTasks);
-        } catch {
-        setErrorMessage('Could not load tasks from the API. Showing sample board data for now.');
-        setTasks(sampleTasks);
-        } finally {
-        setIsLoading(false);
+        async function loadTasks() {
+            try {
+            const apiTasks = await getTasks();
+            setTasks(apiTasks);
+            } catch {
+            setErrorMessage('Could not load tasks from the API. Showing sample board data for now.');
+            setTasks(sampleTasks);
+            } finally {
+            setIsLoading(false);
+            }
         }
+
+        void loadTasks();
+    }, []);
+
+    async function handleStatusChange(task: SprintTask, nextStatus: TaskStatus) {
+    const previousTasks = tasks;
+
+    const updatedTask: SprintTask = {
+        ...task,
+        status: nextStatus,
+    };
+
+    setTasks((currentTasks) =>
+        currentTasks.map((currentTask) =>
+        currentTask.id === task.id ? updatedTask : currentTask,
+        ),
+    );
+
+    try {
+        await updateTask(task.id, {
+        title: updatedTask.title,
+        description: updatedTask.description,
+        status: updatedTask.status,
+        priority: updatedTask.priority,
+        storyPoints: updatedTask.storyPoints,
+        xpReward: updatedTask.xpReward,
+        });
+
+        setErrorMessage(null);
+    } catch {
+        setTasks(previousTasks);
+        setErrorMessage('Could not update the task status. Please try again.');
+    }
     }
 
-    void loadTasks();
-    }, []);
 
   return (
     <section>
@@ -83,7 +116,7 @@ export function BoardPage() {
       </header>
 
       {isLoading && <p className="board-message">Loading board tasks...</p>}
-{errorMessage && <p className="board-message board-message-error">{errorMessage}</p>}
+      {errorMessage && <p className="board-message board-message-error">{errorMessage}</p>}
     
       <div className="board-grid">
         {taskStatuses.map((column) => {
@@ -112,6 +145,23 @@ export function BoardPage() {
                       <span>{task.storyPoints} SP</span>
                       <span>{task.xpReward} XP</span>
                     </div>
+
+                    <label className="task-status-control">
+                    <span>Status</span>
+                    <select
+                        value={task.status}
+                        onChange={(event) =>
+                        void handleStatusChange(task, Number(event.target.value) as TaskStatus)
+                        }
+                    >
+                        {taskStatuses.map((status) => (
+                        <option value={status} key={status}>
+                            {taskStatusLabels[status]}
+                        </option>
+                        ))}
+                    </select>
+                    </label>
+
                   </article>
                 ))}
 
