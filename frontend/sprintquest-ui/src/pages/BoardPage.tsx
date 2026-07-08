@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getTasks, updateTask } from '../api/tasksApi';
+import { deleteTask, getTasks, updateTask } from '../api/tasksApi';
 import {
   taskPriorityLabels,
   taskStatusLabels,
@@ -74,34 +74,50 @@ export function BoardPage() {
     }, []);
 
     async function handleStatusChange(task: SprintTask, nextStatus: TaskStatus) {
-    const previousTasks = tasks;
+        const previousTasks = tasks;
 
-    const updatedTask: SprintTask = {
-        ...task,
-        status: nextStatus,
-    };
+        const updatedTask: SprintTask = {
+            ...task,
+            status: nextStatus,
+        };
 
-    setTasks((currentTasks) =>
-        currentTasks.map((currentTask) =>
-        currentTask.id === task.id ? updatedTask : currentTask,
-        ),
-    );
+        setTasks((currentTasks) =>
+            currentTasks.map((currentTask) =>
+            currentTask.id === task.id ? updatedTask : currentTask,
+            ),
+        );
 
-    try {
-        await updateTask(task.id, {
-        title: updatedTask.title,
-        description: updatedTask.description,
-        status: updatedTask.status,
-        priority: updatedTask.priority,
-        storyPoints: updatedTask.storyPoints,
-        xpReward: updatedTask.xpReward,
-        });
+        try {
+            await updateTask(task.id, {
+            title: updatedTask.title,
+            description: updatedTask.description,
+            status: updatedTask.status,
+            priority: updatedTask.priority,
+            storyPoints: updatedTask.storyPoints,
+            xpReward: updatedTask.xpReward,
+            });
 
-        setErrorMessage(null);
-    } catch {
-        setTasks(previousTasks);
-        setErrorMessage('Could not update the task status. Please try again.');
+            setErrorMessage(null);
+        } catch {
+            setTasks(previousTasks);
+            setErrorMessage('Could not update the task status. Please try again.');
+        }
     }
+
+    async function handleDeleteTask(taskId: string) {
+        const previousTasks = tasks;
+
+        setTasks((currentTasks) =>
+            currentTasks.filter((task) => task.id !== taskId),
+        );
+
+        try {
+            await deleteTask(taskId);
+            setErrorMessage(null);
+        } catch {
+            setTasks(previousTasks);
+            setErrorMessage('Could not delete the task. Please try again.');
+        }
     }
 
 
@@ -161,6 +177,14 @@ export function BoardPage() {
                         ))}
                     </select>
                     </label>
+                    
+                    <button
+                        className="task-delete-button"
+                        type="button"
+                        onClick={() => void handleDeleteTask(task.id)}
+                    >
+                        Delete task
+                    </button>
 
                   </article>
                 ))}
