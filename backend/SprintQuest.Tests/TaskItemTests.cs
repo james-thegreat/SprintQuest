@@ -64,6 +64,63 @@ public class TaskItemTests
     }
 
     [Fact]
+    public void CompleteForXp_WhenTaskIsNotDone_CompletesTaskAndReturnsXpEvent()
+    {
+        // Arrange
+        var task = new TaskItem(
+            Guid.NewGuid(),
+            "Finish gamification rule",
+            xpReward: 30);
+
+        // Act
+        var xpEvent = task.CompleteForXp();
+
+        // Assert
+        Assert.Equal(DomainTaskStatus.Done, task.Status);
+        Assert.NotNull(task.CompletedAt);
+        Assert.NotNull(xpEvent);
+        Assert.Equal(30, xpEvent.Amount);
+        Assert.Equal("Completed task: Finish gamification rule", xpEvent.Reason);
+    }
+
+    [Fact]
+    public void CompleteForXp_WhenTaskIsAlreadyDone_DoesNotCreateDuplicateXpEvent()
+    {
+        // Arrange
+        var task = new TaskItem(
+            Guid.NewGuid(),
+            "Avoid duplicate XP",
+            xpReward: 20);
+
+        task.CompleteForXp();
+
+        // Act
+        var secondXpEvent = task.CompleteForXp();
+
+        // Assert
+        Assert.Null(secondXpEvent);
+    }
+
+    [Fact]
+    public void CompleteForXp_WhenXpRewardIsZero_CompletesTaskButDoesNotCreateXpEvent()
+    {
+        // Arrange
+        var task = new TaskItem(
+            Guid.NewGuid(),
+            "Complete zero XP task",
+            xpReward: 0);
+
+        // Act
+        var xpEvent = task.CompleteForXp();
+
+        // Assert
+        Assert.Equal(DomainTaskStatus.Done, task.Status);
+        Assert.NotNull(task.CompletedAt);
+        Assert.Null(xpEvent);
+    }
+
+
+    [Fact]
     public void Reopen_SetsStatusToToDoAndClearsCompletedAt()
     {
         // Arrange
