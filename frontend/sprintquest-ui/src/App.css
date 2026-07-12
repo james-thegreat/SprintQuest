@@ -364,3 +364,75 @@
     grid-template-columns: 1fr;
   }
 }
+
+.gamification-summary {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.summary-card {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.summary-card-wide {
+  grid-column: span 1;
+}
+
+.summary-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.summary-card strong {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 2rem;
+  line-height: 1;
+  color: #f8fafc;
+}
+
+.summary-help-text {
+  margin: 0.75rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.sprint-progress-bar {
+  width: 100%;
+  height: 0.85rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background-color: rgba(15, 23, 42, 0.8);
+}
+
+.sprint-progress-bar::-webkit-progress-bar {
+  border-radius: 999px;
+  background-color: rgba(15, 23, 42, 0.8);
+}
+
+.sprint-progress-bar::-webkit-progress-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #38bdf8);
+}
+
+.sprint-progress-bar::-moz-progress-bar {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #38bdf8);
+}
+
+@media (max-width: 900px) {
+  .gamification-summary {
+    grid-template-columns: 1fr;
+  }
+}
