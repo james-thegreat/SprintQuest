@@ -3,6 +3,7 @@ using SprintQuest.Application.DTOs.TaskItems;
 using SprintQuest.Application.Interfaces;
 using SprintQuest.Domain.Entities;
 using SprintQuest.Infrastructure.Persistence;
+using DomainTaskStatus = SprintQuest.Domain.Enums.TaskStatus;
 
 namespace SprintQuest.Infrastructure.Services;
 
@@ -121,6 +122,7 @@ public class TaskItemService : ITaskItemService
             return false;
         }
 
+
         task.UpdateDetails(
             request.Title,
             request.Description,
@@ -128,11 +130,24 @@ public class TaskItemService : ITaskItemService
             request.StoryPoints,
             request.XpReward);
 
-        task.MoveToStatus(request.Status);
+            if (request.Status == DomainTaskStatus.Done)
+            {
+                var xpEvent = task.CompleteForXp();
 
-        await _context.SaveChangesAsync();
+                if (xpEvent is not null)
+                {
+                    _context.XpEvents.Add(xpEvent);
+                }
+            }
+            else
+            {
+                task.MoveToStatus(request.Status);
+            }
 
-        return true;
+            await _context.SaveChangesAsync();
+
+            return true;
+
     }
 
     public async Task<bool> DeleteAsync(Guid id)

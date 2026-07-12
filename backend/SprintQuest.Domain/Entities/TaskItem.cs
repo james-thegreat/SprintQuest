@@ -121,6 +121,25 @@ public class TaskItem
         MoveToStatus(DomainTaskStatus.Done);
     }
 
+    public XpEvent? CompleteForXp()
+    {
+        if (Status == DomainTaskStatus.Done)
+        {
+            return null;
+        }
+
+        Complete();
+
+        if (XpReward <= 0)
+        {
+            return null;
+        }
+
+        return new XpEvent(
+            XpReward,
+            $"Completed task: {Title}");
+    }
+
     public void Reopen()
     {
         MoveToStatus(DomainTaskStatus.ToDo);
