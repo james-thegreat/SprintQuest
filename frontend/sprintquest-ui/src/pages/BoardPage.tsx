@@ -167,6 +167,22 @@ export function BoardPage() {
         }
     }
 
+    
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter((task) => task.status === 4).length;
+    const remainingTasks = totalTasks - completedTasks;
+
+    const sprintProgressPercentage =
+        totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+
+    const totalSprintXp = tasks.reduce(
+        (total, task) => total + task.xpReward,
+        0,
+    );
+
+    const completedSprintXp = tasks
+        .filter((task) => task.status === 4)
+        .reduce((total, task) => total + task.xpReward, 0);
 
   return (
     <section>
@@ -181,6 +197,48 @@ export function BoardPage() {
       {isLoading && <p className="board-message">Loading board tasks...</p>}
       {errorMessage && <p className="board-message board-message-error">{errorMessage}</p>}
     
+        
+              <section className="gamification-summary" aria-label="Sprint progress summary">
+                <article className="summary-card summary-card-wide">
+                <p className="summary-label">Sprint Progress</p>
+                <strong>{sprintProgressPercentage}%</strong>
+
+                <progress
+                    className="sprint-progress-bar"
+                    max="100"
+                    value={sprintProgressPercentage}
+                >
+                    {sprintProgressPercentage}%
+                </progress>
+
+                <p className="summary-help-text">
+                    {totalTasks === 0
+                    ? 'Create your first task to start tracking sprint progress.'
+                    : `${completedTasks} of ${totalTasks} tasks complete.`}
+                </p>
+                </article>
+
+                <article className="summary-card">
+                <p className="summary-label">Tasks Remaining</p>
+                <strong>{remainingTasks}</strong>
+                <p className="summary-help-text">
+                    {remainingTasks === 0 && totalTasks > 0
+                    ? 'Sprint complete!'
+                    : 'Move tasks to Done to finish the sprint.'}
+                </p>
+                </article>
+
+                <article className="summary-card">
+                <p className="summary-label">Sprint XP</p>
+                <strong>
+                    {completedSprintXp} / {totalSprintXp}
+                </strong>
+                <p className="summary-help-text">XP earned from completed board tasks.</p>
+                </article>
+            </section>
+
+        
+
         <form className="task-create-form" onSubmit={handleCreateTask}>
             <div className="form-field">
                 <label htmlFor="task-title">Task title</label>
