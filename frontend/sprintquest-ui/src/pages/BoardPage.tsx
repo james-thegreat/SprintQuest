@@ -9,6 +9,8 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from '../types/task';
+import { getGamificationSummary } from '../api/gamificationApi';
+import type { GamificationSummary } from '../types/gamification';
 
 const defaultSprintId = '9ed966c5-43b8-4b05-8254-cf40666e4b25';
 
@@ -68,11 +70,16 @@ export function BoardPage() {
     const [newTaskXpReward, setNewTaskXpReward] = useState(10);
     const [isCreating, setIsCreating] = useState(false);
 
+    const [gamificationSummary, setGamificationSummary] =
+        useState<GamificationSummary | null>(null);
+
     useEffect(() => {
         async function loadTasks() {
             try {
             const apiTasks = await getTasks();
             setTasks(apiTasks);
+            const summary = await getGamificationSummary();
+            setGamificationSummary(summary);
             } catch {
             setErrorMessage('Could not load tasks from the API. Showing sample board data for now.');
             setTasks(sampleTasks);
@@ -99,7 +106,7 @@ export function BoardPage() {
         );
 
         try {
-            await updateTask(task.id, {
+                        await updateTask(task.id, {
             title: updatedTask.title,
             description: updatedTask.description,
             status: updatedTask.status,
@@ -107,6 +114,9 @@ export function BoardPage() {
             storyPoints: updatedTask.storyPoints,
             xpReward: updatedTask.xpReward,
             });
+
+            const summary = await getGamificationSummary();
+            setGamificationSummary(summary);
 
             setErrorMessage(null);
         } catch {
@@ -175,10 +185,7 @@ export function BoardPage() {
     const sprintProgressPercentage =
         totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
-    const totalSprintXp = tasks.reduce(
-        (total, task) => total + task.xpReward,
-        0,
-    );
+
 
     const completedSprintXp = tasks
         .filter((task) => task.status === 4)
@@ -229,12 +236,24 @@ export function BoardPage() {
                 </article>
 
                 <article className="summary-card">
-                <p className="summary-label">Sprint XP</p>
-                <strong>
-                    {completedSprintXp} / {totalSprintXp}
-                </strong>
-                <p className="summary-help-text">XP earned from completed board tasks.</p>
+                  <p className="summary-label">Total XP</p>
+                  <strong>{gamificationSummary?.totalXp ?? completedSprintXp}</strong>
+                  <p className="summary-help-text">
+                    XP earned from completed task rewards.
+                  </p>
                 </article>
+
+                <article className="summary-card">
+                  <p className="summary-label">Achievements</p>
+                  <strong>{gamificationSummary?.unlockedAchievements.length ?? 0}</strong>
+                  <p className="summary-help-text">
+                    {gamificationSummary?.unlockedAchievements.length
+                      ? gamificationSummary.unlockedAchievements
+                          .map((achievement) => achievement.name)
+                          .join(', ')
+                      : 'Complete your first task to unlock an achievement.'}
+                  </p>
+              </article>
             </section>
 
         
