@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { createTask, deleteTask } from '../api/tasksApi';
+import { createTask } from '../api/tasksApi';
 import { useBoardStore } from '../stores/useBoardStore';
 import {
   taskPriorities,
@@ -26,6 +26,10 @@ export function BoardPage() {
 
     const updateTaskStatus = useBoardStore(
       (state) => state.updateTaskStatus,
+    );
+
+    const deleteTaskFromStore = useBoardStore(
+      (state) => state.deleteTask,
     );
 
     const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -84,19 +88,7 @@ export function BoardPage() {
     // -----------------------------------
 
     async function handleDeleteTask(taskId: string) {
-        const previousTasks = tasks;
-
-        setTasks((currentTasks) =>
-            currentTasks.filter((task) => task.id !== taskId),
-        );
-
-        try {
-            await deleteTask(taskId);
-            setErrorMessage(null);
-        } catch {
-            setTasks(previousTasks);
-            setErrorMessage('Could not delete the task. Please try again.');
-        }
+      await deleteTaskFromStore(taskId);
     }
 
     async function handleCreateTask(event: FormEvent<HTMLFormElement>) {

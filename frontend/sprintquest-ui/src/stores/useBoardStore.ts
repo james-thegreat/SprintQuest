@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { getTasks, updateTask } from '../api/tasksApi';
+import {
+  deleteTask as deleteTaskRequest,
+  getTasks,
+  updateTask,
+} from '../api/tasksApi';
 import type { SprintTask, TaskStatus } from '../types/task';
 
 const sampleTasks: SprintTask[] = [
@@ -56,10 +60,12 @@ type BoardStore = {
   loadTasks: () => Promise<void>;
   setTasks: (nextTasks: TaskStateUpdate) => void;
   setErrorMessage: (message: string | null) => void;
+  deleteTask: (taskId: string) => Promise<boolean>;
   updateTaskStatus: (
     task: SprintTask,
     nextStatus: TaskStatus,
     ) => Promise<boolean>;
+
 };
 
 export const useBoardStore = create<BoardStore>((set, get) => ({
@@ -129,6 +135,31 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       return false;
     }
   },
+
+//   ------------------------------------
+
+  deleteTask: async (taskId) => {
+    const previousTasks = get().tasks;
+
+    set((state) => ({
+        tasks: state.tasks.filter((task) => task.id !== taskId),
+        errorMessage: null,
+    }));
+
+    try {
+        await deleteTaskRequest(taskId);
+        return true;
+    } catch {
+        set({
+        tasks: previousTasks,
+        errorMessage: 'Could not delete the task. Please try again.',
+        });
+
+        return false;
+    }
+  },
+
+//   ------------------------------------
 
 
   setTasks: (nextTasks) =>
