@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { getTasks } from '../api/tasksApi';
-import type { SprintTask } from '../types/task';
+import { getTasks, updateTask } from '../api/tasksApi';
+import type { SprintTask, TaskStatus } from '../types/task';
 
 const sampleTasks: SprintTask[] = [
   {
@@ -56,9 +56,13 @@ type BoardStore = {
   loadTasks: () => Promise<void>;
   setTasks: (nextTasks: TaskStateUpdate) => void;
   setErrorMessage: (message: string | null) => void;
+  updateTaskStatus: (
+    task: SprintTask,
+    nextStatus: TaskStatus,
+    ) => Promise<boolean>;
 };
 
-export const useBoardStore = create<BoardStore>((set) => ({
+export const useBoardStore = create<BoardStore>((set, get) => ({
   tasks: sampleTasks,
   isLoading: true,
   errorMessage: null,
@@ -88,6 +92,44 @@ export const useBoardStore = create<BoardStore>((set) => ({
       });
     }
   },
+
+
+  updateTaskStatus: async (task, nextStatus) => {
+    const previousTasks = get().tasks;
+
+    const updatedTask: SprintTask = {
+      ...task,
+      status: nextStatus,
+    };
+
+    set((state) => ({
+      tasks: state.tasks.map((currentTask) =>
+        currentTask.id === task.id ? updatedTask : currentTask,
+      ),
+      errorMessage: null,
+    }));
+
+    try {
+      await updateTask(task.id, {
+        title: updatedTask.title,
+        description: updatedTask.description,
+        status: updatedTask.status,
+        priority: updatedTask.priority,
+        storyPoints: updatedTask.storyPoints,
+        xpReward: updatedTask.xpReward,
+      });
+
+      return true;
+    } catch {
+      set({
+        tasks: previousTasks,
+        errorMessage: 'Could not update the task status. Please try again.',
+      });
+
+      return false;
+    }
+  },
+
 
   setTasks: (nextTasks) =>
     set((state) => ({

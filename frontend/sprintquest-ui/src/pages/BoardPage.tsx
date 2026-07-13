@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { createTask, deleteTask, updateTask } from '../api/tasksApi';
+import { createTask, deleteTask } from '../api/tasksApi';
 import { useBoardStore } from '../stores/useBoardStore';
 import {
   taskPriorities,
@@ -23,6 +23,10 @@ export function BoardPage() {
     const loadTasks = useBoardStore((state) => state.loadTasks);
     const setTasks = useBoardStore((state) => state.setTasks);
     const setErrorMessage = useBoardStore((state) => state.setErrorMessage);
+
+    const updateTaskStatus = useBoardStore(
+      (state) => state.updateTaskStatus,
+    );
 
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
@@ -54,39 +58,30 @@ export function BoardPage() {
       void loadSummary();
     }, [setErrorMessage]);
 
-    async function handleStatusChange(task: SprintTask, nextStatus: TaskStatus) {
-        const previousTasks = tasks;
 
-        const updatedTask: SprintTask = {
-            ...task,
-            status: nextStatus,
-        };
+    // -----------------------------------
 
-        setTasks((currentTasks) =>
-            currentTasks.map((currentTask) =>
-            currentTask.id === task.id ? updatedTask : currentTask,
-            ),
+    async function handleStatusChange(
+      task: SprintTask,
+      nextStatus: TaskStatus,
+    ) {
+      const wasUpdated = await updateTaskStatus(task, nextStatus);
+
+      if (!wasUpdated) {
+        return;
+      }
+
+      try {
+        const summary = await getGamificationSummary();
+        setGamificationSummary(summary);
+      } catch {
+        setErrorMessage(
+          'The task was updated, but the gamification summary could not be refreshed.',
         );
-
-        try {
-                        await updateTask(task.id, {
-            title: updatedTask.title,
-            description: updatedTask.description,
-            status: updatedTask.status,
-            priority: updatedTask.priority,
-            storyPoints: updatedTask.storyPoints,
-            xpReward: updatedTask.xpReward,
-            });
-
-            const summary = await getGamificationSummary();
-            setGamificationSummary(summary);
-
-            setErrorMessage(null);
-        } catch {
-            setTasks(previousTasks);
-            setErrorMessage('Could not update the task status. Please try again.');
-        }
+      }
     }
+
+    // -----------------------------------
 
     async function handleDeleteTask(taskId: string) {
         const previousTasks = tasks;
