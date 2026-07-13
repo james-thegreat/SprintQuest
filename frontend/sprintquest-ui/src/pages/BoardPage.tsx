@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { createTask, deleteTask, getTasks, updateTask } from '../api/tasksApi';
+import { createTask, deleteTask, updateTask } from '../api/tasksApi';
+import { useBoardStore } from '../stores/useBoardStore';
 import {
   taskPriorities,
   taskPriorityLabels,
@@ -14,54 +15,14 @@ import type { GamificationSummary } from '../types/gamification';
 
 const defaultSprintId = '9ed966c5-43b8-4b05-8254-cf40666e4b25';
 
-const sampleTasks: SprintTask[] = [
-  {
-    id: '1',
-    sprintId: '1',
-    title: 'Design sprint board layout',
-    description: 'Create the first responsive board view for SprintQuest.',
-    status: 4,
-    priority: 2,
-    storyPoints: 3,
-    xpReward: 50,
-  },
-  {
-    id: '2',
-    sprintId: '2',
-    title: 'Connect board to task API',
-    description: 'Load task cards from the backend instead of sample data.',
-    status: 2,
-    priority: 2,
-    storyPoints: 5,
-    xpReward: 80,
-  },
-  {
-    id: '3',
-    sprintId: '3',
-    title: 'Add task create form',
-    description: 'Allow users to create a task from the board page.',
-    status: 1,
-    priority: 1,
-    storyPoints: 3,
-    xpReward: 40,
-  },
-  {
-    id: '4',
-    sprintId: '4',
-    title: 'Review checklist progress UI',
-    description: 'Show checklist progress on each task card.',
-    status: 0,
-    priority: 0,
-    storyPoints: 2,
-    xpReward: 25,
-  },
-];
-
 export function BoardPage() {
 
-    const [tasks, setTasks] = useState<SprintTask[]>(sampleTasks);
-    const [isLoading, setIsLoading] = useState(true);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const tasks = useBoardStore((state) => state.tasks);
+    const isLoading = useBoardStore((state) => state.isLoading);
+    const errorMessage = useBoardStore((state) => state.errorMessage);
+    const loadTasks = useBoardStore((state) => state.loadTasks);
+    const setTasks = useBoardStore((state) => state.setTasks);
+    const setErrorMessage = useBoardStore((state) => state.setErrorMessage);
 
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
@@ -73,23 +34,25 @@ export function BoardPage() {
     const [gamificationSummary, setGamificationSummary] =
         useState<GamificationSummary | null>(null);
 
-    useEffect(() => {
-        async function loadTasks() {
-            try {
-            const apiTasks = await getTasks();
-            setTasks(apiTasks);
-            const summary = await getGamificationSummary();
-            setGamificationSummary(summary);
-            } catch {
-            setErrorMessage('Could not load tasks from the API. Showing sample board data for now.');
-            setTasks(sampleTasks);
-            } finally {
-            setIsLoading(false);
-            }
-        }
 
-        void loadTasks();
-    }, []);
+    useEffect(() => {
+      void loadTasks();
+    }, [loadTasks]);
+
+    useEffect(() => {
+      async function loadSummary() {
+        try {
+          const summary = await getGamificationSummary();
+          setGamificationSummary(summary);
+        } catch {
+          setErrorMessage(
+            'Could not load the gamification summary. Please try again.',
+          );
+        }
+      }
+
+      void loadSummary();
+    }, [setErrorMessage]);
 
     async function handleStatusChange(task: SprintTask, nextStatus: TaskStatus) {
         const previousTasks = tasks;
