@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { createTask } from '../api/tasksApi';
 import { useBoardStore } from '../stores/useBoardStore';
 import {
   taskPriorities,
@@ -21,7 +20,6 @@ export function BoardPage() {
     const isLoading = useBoardStore((state) => state.isLoading);
     const errorMessage = useBoardStore((state) => state.errorMessage);
     const loadTasks = useBoardStore((state) => state.loadTasks);
-    const setTasks = useBoardStore((state) => state.setTasks);
     const setErrorMessage = useBoardStore((state) => state.setErrorMessage);
 
     const updateTaskStatus = useBoardStore(
@@ -32,12 +30,17 @@ export function BoardPage() {
       (state) => state.deleteTask,
     );
 
+    const isCreating = useBoardStore((state) => state.isCreating);
+
+    const createTaskInStore = useBoardStore(
+      (state) => state.createTask,
+    );
+
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
     const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>(1);
     const [newTaskStoryPoints, setNewTaskStoryPoints] = useState(1);
     const [newTaskXpReward, setNewTaskXpReward] = useState(10);
-    const [isCreating, setIsCreating] = useState(false);
 
     const [gamificationSummary, setGamificationSummary] =
         useState<GamificationSummary | null>(null);
@@ -63,7 +66,6 @@ export function BoardPage() {
     }, [setErrorMessage]);
 
 
-    // -----------------------------------
 
     async function handleStatusChange(
       task: SprintTask,
@@ -85,47 +87,42 @@ export function BoardPage() {
       }
     }
 
-    // -----------------------------------
-
     async function handleDeleteTask(taskId: string) {
       await deleteTaskFromStore(taskId);
     }
 
+
+
     async function handleCreateTask(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+      event.preventDefault();
 
-        const trimmedTitle = newTaskTitle.trim();
+      const trimmedTitle = newTaskTitle.trim();
 
-        if (!trimmedTitle) {
-            setErrorMessage('Task title is required.');
-            return;
-        }
+      if (!trimmedTitle) {
+        setErrorMessage('Task title is required.');
+        return;
+      }
 
-        setIsCreating(true);
+      const wasCreated = await createTaskInStore({
+        sprintId: defaultSprintId,
+        title: trimmedTitle,
+        description: newTaskDescription.trim() || null,
+        priority: newTaskPriority,
+        storyPoints: newTaskStoryPoints,
+        xpReward: newTaskXpReward,
+      });
 
-        try {
-            const createdTask = await createTask({
-            sprintId: defaultSprintId,
-            title: trimmedTitle,
-            description: newTaskDescription.trim() || null,
-            priority: newTaskPriority,
-            storyPoints: newTaskStoryPoints,
-            xpReward: newTaskXpReward,
-            });
+      if (!wasCreated) {
+        return;
+      }
 
-            setTasks((currentTasks) => [createdTask, ...currentTasks]);
-            setNewTaskTitle('');
-            setNewTaskDescription('');
-            setNewTaskPriority(1);
-            setNewTaskStoryPoints(1);
-            setNewTaskXpReward(10);
-            setErrorMessage(null);
-        } catch {
-            setErrorMessage('Could not create the task. Please try again.');
-        } finally {
-            setIsCreating(false);
-        }
+      setNewTaskTitle('');
+      setNewTaskDescription('');
+      setNewTaskPriority(1);
+      setNewTaskStoryPoints(1);
+      setNewTaskXpReward(10);
     }
+
 
     
     const totalTasks = tasks.length;

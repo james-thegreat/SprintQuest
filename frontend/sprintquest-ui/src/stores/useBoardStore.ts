@@ -1,10 +1,15 @@
 import { create } from 'zustand';
 import {
+  createTask as createTaskRequest,
   deleteTask as deleteTaskRequest,
   getTasks,
   updateTask,
 } from '../api/tasksApi';
-import type { SprintTask, TaskStatus } from '../types/task';
+import type {
+  CreateTaskRequest,
+  SprintTask,
+  TaskStatus,
+} from '../types/task';
 
 const sampleTasks: SprintTask[] = [
   {
@@ -56,22 +61,26 @@ type TaskStateUpdate =
 type BoardStore = {
   tasks: SprintTask[];
   isLoading: boolean;
+  isCreating: boolean;
   errorMessage: string | null;
-  loadTasks: () => Promise<void>;
-  setTasks: (nextTasks: TaskStateUpdate) => void;
-  setErrorMessage: (message: string | null) => void;
-  deleteTask: (taskId: string) => Promise<boolean>;
-  updateTaskStatus: (
-    task: SprintTask,
-    nextStatus: TaskStatus,
-    ) => Promise<boolean>;
 
+  loadTasks: () => Promise<void>;
+  createTask: (request: CreateTaskRequest) => Promise<boolean>;
+  updateTaskStatus: (
+      task: SprintTask,
+      nextStatus: TaskStatus,
+    ) => Promise<boolean>;
+    deleteTask: (taskId: string) => Promise<boolean>;
+
+    setTasks: (nextTasks: TaskStateUpdate) => void;
+    setErrorMessage: (message: string | null) => void;
 };
 
 export const useBoardStore = create<BoardStore>((set, get) => ({
   tasks: sampleTasks,
   isLoading: true,
   errorMessage: null,
+  isCreating: false,
 
   loadTasks: async () => {
     set({
@@ -98,6 +107,37 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
       });
     }
   },
+
+
+  createTask: async (request) => {
+    set({
+        isCreating: true,
+        errorMessage: null,
+    });
+
+    try {
+        const createdTask = await createTaskRequest(request);
+
+        set((state) => ({
+        tasks: [createdTask, ...state.tasks],
+        errorMessage: null,
+        }));
+
+        return true;
+    } catch {
+        set({
+        errorMessage: 'Could not create the task. Please try again.',
+        });
+
+        return false;
+    } finally {
+        set({
+        isCreating: false,
+        });
+    }
+  },
+
+
 
 
   updateTaskStatus: async (task, nextStatus) => {
@@ -136,7 +176,6 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     }
   },
 
-//   ------------------------------------
 
   deleteTask: async (taskId) => {
     const previousTasks = get().tasks;
@@ -158,8 +197,6 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         return false;
     }
   },
-
-//   ------------------------------------
 
 
   setTasks: (nextTasks) =>
