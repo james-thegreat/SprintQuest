@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { createTask, deleteTask, getTasks, updateTask } from '../api/tasksApi';
+import { useBoardStore } from '../stores/useBoardStore';
 import {
   taskPriorities,
   taskPriorityLabels,
@@ -9,173 +9,114 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from '../types/task';
-import { getGamificationSummary } from '../api/gamificationApi';
-import type { GamificationSummary } from '../types/gamification';
+import { useGamificationStore } from '../stores/useGamificationStore';
 
 const defaultSprintId = '9ed966c5-43b8-4b05-8254-cf40666e4b25';
 
-const sampleTasks: SprintTask[] = [
-  {
-    id: '1',
-    sprintId: '1',
-    title: 'Design sprint board layout',
-    description: 'Create the first responsive board view for SprintQuest.',
-    status: 4,
-    priority: 2,
-    storyPoints: 3,
-    xpReward: 50,
-  },
-  {
-    id: '2',
-    sprintId: '2',
-    title: 'Connect board to task API',
-    description: 'Load task cards from the backend instead of sample data.',
-    status: 2,
-    priority: 2,
-    storyPoints: 5,
-    xpReward: 80,
-  },
-  {
-    id: '3',
-    sprintId: '3',
-    title: 'Add task create form',
-    description: 'Allow users to create a task from the board page.',
-    status: 1,
-    priority: 1,
-    storyPoints: 3,
-    xpReward: 40,
-  },
-  {
-    id: '4',
-    sprintId: '4',
-    title: 'Review checklist progress UI',
-    description: 'Show checklist progress on each task card.',
-    status: 0,
-    priority: 0,
-    storyPoints: 2,
-    xpReward: 25,
-  },
-];
-
 export function BoardPage() {
 
-    const [tasks, setTasks] = useState<SprintTask[]>(sampleTasks);
-    const [isLoading, setIsLoading] = useState(true);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const tasks = useBoardStore((state) => state.tasks);
+    const isLoading = useBoardStore((state) => state.isLoading);
+    const errorMessage = useBoardStore((state) => state.errorMessage);
+    const loadTasks = useBoardStore((state) => state.loadTasks);
+    const setErrorMessage = useBoardStore((state) => state.setErrorMessage);
+
+    const updateTaskStatus = useBoardStore(
+      (state) => state.updateTaskStatus,
+    );
+
+    const deleteTaskFromStore = useBoardStore(
+      (state) => state.deleteTask,
+    );
+
+    const isCreating = useBoardStore((state) => state.isCreating);
+
+    const createTaskInStore = useBoardStore(
+      (state) => state.createTask,
+    );
+
+    const gamificationSummary = useGamificationStore(
+      (state) => state.summary,
+    );
+
+    const isGamificationLoading = useGamificationStore(
+      (state) => state.isLoading,
+    );
+
+    const gamificationErrorMessage = useGamificationStore(
+      (state) => state.errorMessage,
+    );
+
+    const loadGamificationSummary = useGamificationStore(
+      (state) => state.loadSummary,
+    );
 
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
     const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>(1);
     const [newTaskStoryPoints, setNewTaskStoryPoints] = useState(1);
     const [newTaskXpReward, setNewTaskXpReward] = useState(10);
-    const [isCreating, setIsCreating] = useState(false);
 
-    const [gamificationSummary, setGamificationSummary] =
-        useState<GamificationSummary | null>(null);
 
     useEffect(() => {
-        async function loadTasks() {
-            try {
-            const apiTasks = await getTasks();
-            setTasks(apiTasks);
-            const summary = await getGamificationSummary();
-            setGamificationSummary(summary);
-            } catch {
-            setErrorMessage('Could not load tasks from the API. Showing sample board data for now.');
-            setTasks(sampleTasks);
-            } finally {
-            setIsLoading(false);
-            }
-        }
+      void loadTasks();
+    }, [loadTasks]);
 
-        void loadTasks();
-    }, []);
+    useEffect(() => {
+      void loadGamificationSummary();
+    }, [loadGamificationSummary]);
 
-    async function handleStatusChange(task: SprintTask, nextStatus: TaskStatus) {
-        const previousTasks = tasks;
 
-        const updatedTask: SprintTask = {
-            ...task,
-            status: nextStatus,
-        };
 
-        setTasks((currentTasks) =>
-            currentTasks.map((currentTask) =>
-            currentTask.id === task.id ? updatedTask : currentTask,
-            ),
-        );
+    async function handleStatusChange(
+      task: SprintTask,
+      nextStatus: TaskStatus,
+    ) {
+      const wasUpdated = await updateTaskStatus(task, nextStatus);
 
-        try {
-                        await updateTask(task.id, {
-            title: updatedTask.title,
-            description: updatedTask.description,
-            status: updatedTask.status,
-            priority: updatedTask.priority,
-            storyPoints: updatedTask.storyPoints,
-            xpReward: updatedTask.xpReward,
-            });
+      if (!wasUpdated) {
+        return;
+      }
 
-            const summary = await getGamificationSummary();
-            setGamificationSummary(summary);
-
-            setErrorMessage(null);
-        } catch {
-            setTasks(previousTasks);
-            setErrorMessage('Could not update the task status. Please try again.');
-        }
+      await loadGamificationSummary();
     }
 
     async function handleDeleteTask(taskId: string) {
-        const previousTasks = tasks;
-
-        setTasks((currentTasks) =>
-            currentTasks.filter((task) => task.id !== taskId),
-        );
-
-        try {
-            await deleteTask(taskId);
-            setErrorMessage(null);
-        } catch {
-            setTasks(previousTasks);
-            setErrorMessage('Could not delete the task. Please try again.');
-        }
+      await deleteTaskFromStore(taskId);
     }
+
+
 
     async function handleCreateTask(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+      event.preventDefault();
 
-        const trimmedTitle = newTaskTitle.trim();
+      const trimmedTitle = newTaskTitle.trim();
 
-        if (!trimmedTitle) {
-            setErrorMessage('Task title is required.');
-            return;
-        }
+      if (!trimmedTitle) {
+        setErrorMessage('Task title is required.');
+        return;
+      }
 
-        setIsCreating(true);
+      const wasCreated = await createTaskInStore({
+        sprintId: defaultSprintId,
+        title: trimmedTitle,
+        description: newTaskDescription.trim() || null,
+        priority: newTaskPriority,
+        storyPoints: newTaskStoryPoints,
+        xpReward: newTaskXpReward,
+      });
 
-        try {
-            const createdTask = await createTask({
-            sprintId: defaultSprintId,
-            title: trimmedTitle,
-            description: newTaskDescription.trim() || null,
-            priority: newTaskPriority,
-            storyPoints: newTaskStoryPoints,
-            xpReward: newTaskXpReward,
-            });
+      if (!wasCreated) {
+        return;
+      }
 
-            setTasks((currentTasks) => [createdTask, ...currentTasks]);
-            setNewTaskTitle('');
-            setNewTaskDescription('');
-            setNewTaskPriority(1);
-            setNewTaskStoryPoints(1);
-            setNewTaskXpReward(10);
-            setErrorMessage(null);
-        } catch {
-            setErrorMessage('Could not create the task. Please try again.');
-        } finally {
-            setIsCreating(false);
-        }
+      setNewTaskTitle('');
+      setNewTaskDescription('');
+      setNewTaskPriority(1);
+      setNewTaskStoryPoints(1);
+      setNewTaskXpReward(10);
     }
+
 
     
     const totalTasks = tasks.length;
@@ -203,7 +144,16 @@ export function BoardPage() {
 
       {isLoading && <p className="board-message">Loading board tasks...</p>}
       {errorMessage && <p className="board-message board-message-error">{errorMessage}</p>}
-    
+
+      {isGamificationLoading && (
+        <p className="board-message">Loading gamification summary...</p>
+      )}
+
+      {gamificationErrorMessage && (
+        <p className="board-message board-message-error">
+          {gamificationErrorMessage}
+        </p>
+      )}
         
               <section className="gamification-summary" aria-label="Sprint progress summary">
                 <article className="summary-card summary-card-wide">
