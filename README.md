@@ -93,7 +93,7 @@ frontend/
 
 The top three advanced features planned for assessment are:
 
-* [ ] Zustand state management
+* [x] Zustand state management
 * [ ] Security measures
 * [ ] SignalR WebSockets
 
