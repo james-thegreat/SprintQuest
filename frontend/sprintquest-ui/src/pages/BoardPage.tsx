@@ -9,8 +9,7 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from '../types/task';
-import { getGamificationSummary } from '../api/gamificationApi';
-import type { GamificationSummary } from '../types/gamification';
+import { useGamificationStore } from '../stores/useGamificationStore';
 
 const defaultSprintId = '9ed966c5-43b8-4b05-8254-cf40666e4b25';
 
@@ -36,14 +35,27 @@ export function BoardPage() {
       (state) => state.createTask,
     );
 
+    const gamificationSummary = useGamificationStore(
+      (state) => state.summary,
+    );
+
+    const isGamificationLoading = useGamificationStore(
+      (state) => state.isLoading,
+    );
+
+    const gamificationErrorMessage = useGamificationStore(
+      (state) => state.errorMessage,
+    );
+
+    const loadGamificationSummary = useGamificationStore(
+      (state) => state.loadSummary,
+    );
+
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
     const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>(1);
     const [newTaskStoryPoints, setNewTaskStoryPoints] = useState(1);
     const [newTaskXpReward, setNewTaskXpReward] = useState(10);
-
-    const [gamificationSummary, setGamificationSummary] =
-        useState<GamificationSummary | null>(null);
 
 
     useEffect(() => {
@@ -51,19 +63,8 @@ export function BoardPage() {
     }, [loadTasks]);
 
     useEffect(() => {
-      async function loadSummary() {
-        try {
-          const summary = await getGamificationSummary();
-          setGamificationSummary(summary);
-        } catch {
-          setErrorMessage(
-            'Could not load the gamification summary. Please try again.',
-          );
-        }
-      }
-
-      void loadSummary();
-    }, [setErrorMessage]);
+      void loadGamificationSummary();
+    }, [loadGamificationSummary]);
 
 
 
@@ -77,14 +78,7 @@ export function BoardPage() {
         return;
       }
 
-      try {
-        const summary = await getGamificationSummary();
-        setGamificationSummary(summary);
-      } catch {
-        setErrorMessage(
-          'The task was updated, but the gamification summary could not be refreshed.',
-        );
-      }
+      await loadGamificationSummary();
     }
 
     async function handleDeleteTask(taskId: string) {
@@ -150,7 +144,16 @@ export function BoardPage() {
 
       {isLoading && <p className="board-message">Loading board tasks...</p>}
       {errorMessage && <p className="board-message board-message-error">{errorMessage}</p>}
-    
+
+      {isGamificationLoading && (
+        <p className="board-message">Loading gamification summary...</p>
+      )}
+
+      {gamificationErrorMessage && (
+        <p className="board-message board-message-error">
+          {gamificationErrorMessage}
+        </p>
+      )}
         
               <section className="gamification-summary" aria-label="Sprint progress summary">
                 <article className="summary-card summary-card-wide">
