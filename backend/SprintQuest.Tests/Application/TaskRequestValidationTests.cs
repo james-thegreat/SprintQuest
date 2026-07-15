@@ -55,7 +55,7 @@ public class TaskRequestValidationTests
     public void CreateRequest_WithTitleOverMaximumLength_IsInvalid()
     {
         var request = CreateValidRequest();
-        request.Title = new string('A', 151);
+        request.Title = new string('A', 201);
 
         var results = Validate(request);
 
