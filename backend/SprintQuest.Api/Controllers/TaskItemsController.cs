@@ -83,6 +83,10 @@ public class TaskItemsController : ControllerBase
             return NotFound();
         }
 
+        await _boardHubContext.Clients.All.SendAsync(
+            "TaskUpdated",
+            updatedTask);
+
         return Ok(updatedTask);
     }
 
