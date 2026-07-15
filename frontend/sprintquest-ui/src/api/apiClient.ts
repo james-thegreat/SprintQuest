@@ -30,7 +30,10 @@ export async function apiPost<TResponse, TRequest>(path: string, body: TRequest)
   return handleResponse<TResponse>(response);
 }
 
-export async function apiPut<TRequest>(path: string, body: TRequest): Promise<void> {
+export async function apiPut<TResponse, TRequest>(
+  path: string,
+  body: TRequest,
+): Promise<TResponse> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'PUT',
     headers: {
@@ -39,7 +42,7 @@ export async function apiPut<TRequest>(path: string, body: TRequest): Promise<vo
     body: JSON.stringify(body),
   });
 
-  return handleResponse<void>(response);
+  return handleResponse<TResponse>(response);
 }
 
 export async function apiDelete(path: string): Promise<void> {

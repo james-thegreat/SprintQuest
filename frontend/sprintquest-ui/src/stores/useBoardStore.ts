@@ -72,6 +72,9 @@ type BoardStore = {
     ) => Promise<boolean>;
     deleteTask: (taskId: string) => Promise<boolean>;
 
+    reconcileTask: (task: SprintTask) => void;
+    removeTaskById: (taskId: string) => void;
+    
     setTasks: (nextTasks: TaskStateUpdate) => void;
     setErrorMessage: (message: string | null) => void;
 };
@@ -118,10 +121,11 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     try {
         const createdTask = await createTaskRequest(request);
 
-        set((state) => ({
-        tasks: [createdTask, ...state.tasks],
+        get().reconcileTask(createdTask);
+
+        set({
         errorMessage: null,
-        }));
+        });
 
         return true;
     } catch {
@@ -156,16 +160,18 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     }));
 
     try {
-      await updateTask(task.id, {
+      const authoritativeTask = await updateTask(task.id, {
         title: updatedTask.title,
         description: updatedTask.description,
         status: updatedTask.status,
         priority: updatedTask.priority,
         storyPoints: updatedTask.storyPoints,
         xpReward: updatedTask.xpReward,
-      });
+        });
 
-      return true;
+        get().reconcileTask(authoritativeTask);
+
+        return true;
     } catch {
       set({
         tasks: previousTasks,
@@ -180,10 +186,11 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   deleteTask: async (taskId) => {
     const previousTasks = get().tasks;
 
-    set((state) => ({
-        tasks: state.tasks.filter((task) => task.id !== taskId),
+    get().removeTaskById(taskId);
+
+    set({
         errorMessage: null,
-    }));
+    });
 
     try {
         await deleteTaskRequest(taskId);
@@ -198,6 +205,25 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
     }
   },
 
+  reconcileTask: (incomingTask) =>
+  set((state) => {
+    const taskExists = state.tasks.some(
+      (task) => task.id === incomingTask.id,
+    );
+
+    return {
+      tasks: taskExists
+        ? state.tasks.map((task) =>
+            task.id === incomingTask.id ? incomingTask : task,
+          )
+        : [incomingTask, ...state.tasks],
+    };
+  }),
+
+  removeTaskById: (taskId) =>
+  set((state) => ({
+    tasks: state.tasks.filter((task) => task.id !== taskId),
+  })),
 
   setTasks: (nextTasks) =>
     set((state) => ({
