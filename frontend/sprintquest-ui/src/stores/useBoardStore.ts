@@ -74,7 +74,7 @@ type BoardStore = {
 
     reconcileTask: (task: SprintTask) => void;
     removeTaskById: (taskId: string) => void;
-    
+
     setTasks: (nextTasks: TaskStateUpdate) => void;
     setErrorMessage: (message: string | null) => void;
 };
