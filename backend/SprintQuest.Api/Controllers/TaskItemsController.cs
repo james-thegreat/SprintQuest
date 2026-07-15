@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SprintQuest.Application.DTOs.TaskItems;
 using SprintQuest.Application.Interfaces;
+using Microsoft.AspNetCore.SignalR;
+using SprintQuest.Api.Hubs;
 
 namespace SprintQuest.Api.Controllers;
 
@@ -9,10 +11,14 @@ namespace SprintQuest.Api.Controllers;
 public class TaskItemsController : ControllerBase
 {
     private readonly ITaskItemService _taskItemService;
+    private readonly IHubContext<BoardHub> _boardHubContext;
 
-    public TaskItemsController(ITaskItemService taskItemService)
+    public TaskItemsController(
+        ITaskItemService taskItemService,
+        IHubContext<BoardHub> boardHubContext)
     {
         _taskItemService = taskItemService;
+        _boardHubContext = boardHubContext;
     }
 
     [HttpGet]
@@ -55,7 +61,14 @@ public class TaskItemsController : ControllerBase
             return NotFound("Sprint not found.");
         }
 
-        return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
+        await _boardHubContext.Clients.All.SendAsync(
+            "TaskCreated",
+            task);
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = task.Id },
+            task);
     }
 
     [HttpPut("{id:guid}")]
