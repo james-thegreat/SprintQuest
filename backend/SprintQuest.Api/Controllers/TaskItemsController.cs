@@ -100,6 +100,10 @@ public class TaskItemsController : ControllerBase
             return NotFound();
         }
 
+        await _boardHubContext.Clients.All.SendAsync(
+            "TaskDeleted",
+            new { TaskId = id });
+
         return NoContent();
     }
 }
