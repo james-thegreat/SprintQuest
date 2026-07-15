@@ -45,37 +45,30 @@ public class ChecklistItemsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ChecklistItemDto>> Create(CreateChecklistItemRequest request)
+    public async Task<ActionResult<ChecklistItemDto>> Create(
+        CreateChecklistItemRequest request)
     {
-        if (request.TaskItemId == Guid.Empty)
-        {
-            return BadRequest("Task item id is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest("Checklist item title is required.");
-        }
-
-        var checklistItem = await _checklistItemService.CreateAsync(request);
+        var checklistItem =
+            await _checklistItemService.CreateAsync(request);
 
         if (checklistItem is null)
         {
             return NotFound("Task item not found.");
         }
 
-        return CreatedAtAction(nameof(GetById), new { id = checklistItem.Id }, checklistItem);
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = checklistItem.Id },
+            checklistItem);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, UpdateChecklistItemRequest request)
+    public async Task<IActionResult> Update(
+        Guid id,
+        UpdateChecklistItemRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest("Checklist item title is required.");
-        }
-
-        var updated = await _checklistItemService.UpdateAsync(id, request);
+        var updated =
+            await _checklistItemService.UpdateAsync(id, request);
 
         if (!updated)
         {

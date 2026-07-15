@@ -45,28 +45,9 @@ public class TaskItemsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<TaskItemDto>> Create(CreateTaskItemRequest request)
+    public async Task<ActionResult<TaskItemDto>> Create(
+        CreateTaskItemRequest request)
     {
-        if (request.SprintId == Guid.Empty)
-        {
-            return BadRequest("Sprint id is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest("Task title is required.");
-        }
-
-        if (request.StoryPoints < 0)
-        {
-            return BadRequest("Story points cannot be negative.");
-        }
-
-        if (request.XpReward < 0)
-        {
-            return BadRequest("XP reward cannot be negative.");
-        }
-
         var task = await _taskItemService.CreateAsync(request);
 
         if (task is null)
@@ -78,23 +59,10 @@ public class TaskItemsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, UpdateTaskItemRequest request)
+    public async Task<IActionResult> Update(
+        Guid id,
+        UpdateTaskItemRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest("Task title is required.");
-        }
-
-        if (request.StoryPoints < 0)
-        {
-            return BadRequest("Story points cannot be negative.");
-        }
-
-        if (request.XpReward < 0)
-        {
-            return BadRequest("XP reward cannot be negative.");
-        }
-
         var updated = await _taskItemService.UpdateAsync(id, request);
 
         if (!updated)
