@@ -113,15 +113,16 @@ public class TaskItemService : ITaskItemService
         };
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateTaskItemRequest request)
+    public async Task<TaskItemDto?> UpdateAsync(
+        Guid id,
+        UpdateTaskItemRequest request)
     {
         var task = await _context.TaskItems.FindAsync(id);
 
         if (task is null)
         {
-            return false;
+            return null;
         }
-
 
         task.UpdateDetails(
             request.Title,
@@ -130,24 +131,35 @@ public class TaskItemService : ITaskItemService
             request.StoryPoints,
             request.XpReward);
 
-            if (request.Status == DomainTaskStatus.Done)
+        if (request.Status == DomainTaskStatus.Done)
+        {
+            var xpEvent = task.CompleteForXp();
+
+            if (xpEvent is not null)
             {
-                var xpEvent = task.CompleteForXp();
-
-                if (xpEvent is not null)
-                {
-                    _context.XpEvents.Add(xpEvent);
-                }
+                _context.XpEvents.Add(xpEvent);
             }
-            else
-            {
-                task.MoveToStatus(request.Status);
-            }
+        }
+        else
+        {
+            task.MoveToStatus(request.Status);
+        }
 
-            await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
-            return true;
-
+        return new TaskItemDto
+        {
+            Id = task.Id,
+            SprintId = task.SprintId,
+            Title = task.Title,
+            Description = task.Description,
+            Status = task.Status,
+            Priority = task.Priority,
+            StoryPoints = task.StoryPoints,
+            XpReward = task.XpReward,
+            CreatedAt = task.CreatedAt,
+            CompletedAt = task.CompletedAt
+        };
     }
 
     public async Task<bool> DeleteAsync(Guid id)

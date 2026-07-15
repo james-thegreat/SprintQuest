@@ -59,18 +59,18 @@ public class TaskItemsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(
+    public async Task<ActionResult<TaskItemDto>> Update(
         Guid id,
         UpdateTaskItemRequest request)
     {
-        var updated = await _taskItemService.UpdateAsync(id, request);
+        var updatedTask = await _taskItemService.UpdateAsync(id, request);
 
-        if (!updated)
+        if (updatedTask is null)
         {
             return NotFound();
         }
 
-        return NoContent();
+        return Ok(updatedTask);
     }
 
     [HttpDelete("{id:guid}")]

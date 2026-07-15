@@ -12,7 +12,9 @@ public interface ITaskItemService
 
     Task<TaskItemDto?> CreateAsync(CreateTaskItemRequest request);
 
-    Task<bool> UpdateAsync(Guid id, UpdateTaskItemRequest request);
+    Task<TaskItemDto?> UpdateAsync(
+    Guid id,
+    UpdateTaskItemRequest request);
 
     Task<bool> DeleteAsync(Guid id);
 }
