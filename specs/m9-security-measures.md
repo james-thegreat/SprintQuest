@@ -305,3 +305,213 @@ The two selected M9 security measures are:
 2. ASP.NET Core rate limiting
 
 Together, these measures will complete SprintQuest's second selected advanced assessment feature.
+
+
+
+
+## Final Implementation
+
+### Security Measure 1 — Request Validation
+
+Request validation was added to the important create and update DTOs in the Application layer.
+
+Validated resources include:
+
+* projects,
+* sprints,
+* tasks,
+* checklist items.
+
+Reusable validation attributes were introduced:
+
+* `NotEmptyGuidAttribute`
+* `NotWhiteSpaceAttribute`
+
+The implemented rules include:
+
+* required project, sprint, task, and checklist names or titles,
+* rejection of whitespace-only values,
+* rejection of empty parent identifiers,
+* maximum text lengths aligned with EF Core configuration,
+* bounded story points,
+* bounded XP rewards,
+* defined task-status values,
+* defined priority values,
+* required sprint dates,
+* rejection of sprint end dates before start dates.
+
+The final text limits are:
+
+| Resource       | Field       | Maximum length |
+| -------------- | ----------- | -------------: |
+| Project        | Name        |            100 |
+| Project        | Description |          1,000 |
+| Sprint         | Name        |            100 |
+| Task           | Title       |            200 |
+| Task           | Description |          2,000 |
+| Checklist item | Title       |            200 |
+
+Because the API controllers use `[ApiController]`, invalid request DTOs automatically return structured `400 Bad Request` responses before controller actions execute.
+
+Manual request validation was removed from the project, sprint, task, and checklist controllers. Parent-record checks and `404 Not Found` responses remain because these represent application outcomes rather than request-format validation.
+
+Domain validation remains in place as defence in depth.
+
+### Security Measure 2 — ASP.NET Core Rate Limiting
+
+ASP.NET Core's built-in rate-limiting middleware was added in the API layer.
+
+The named policy is:
+
+```text
+ApiRateLimit
+```
+
+The policy uses:
+
+* fixed-window rate limiting,
+* 10 permitted requests,
+* a 10-second window,
+* partitioning by client IP address,
+* a queue limit of zero,
+* immediate rejection of excessive requests,
+* HTTP `429 Too Many Requests`.
+
+The policy is applied to all mapped controller endpoints.
+
+The middleware is positioned after routing and CORS and before controller execution.
+
+This protects SprintQuest from simple request flooding and reduces unnecessary controller, service, database, and gamification processing.
+
+## Important Implementation Files
+
+### Application Layer
+
+* `backend/SprintQuest.Application/Validation/NotEmptyGuidAttribute.cs`
+* `backend/SprintQuest.Application/Validation/NotWhiteSpaceAttribute.cs`
+* `backend/SprintQuest.Application/DTOs/Projects/CreateProjectRequest.cs`
+* `backend/SprintQuest.Application/DTOs/Projects/UpdateProjectRequest.cs`
+* `backend/SprintQuest.Application/DTOs/Sprints/CreateSprintRequest.cs`
+* `backend/SprintQuest.Application/DTOs/Sprints/UpdateSprintRequest.cs`
+* `backend/SprintQuest.Application/DTOs/TaskItems/CreateTaskItemRequest.cs`
+* `backend/SprintQuest.Application/DTOs/TaskItems/UpdateTaskItemRequest.cs`
+* `backend/SprintQuest.Application/DTOs/ChecklistItems/CreateChecklistItemRequest.cs`
+* `backend/SprintQuest.Application/DTOs/ChecklistItems/UpdateChecklistItemRequest.cs`
+
+### API Layer
+
+* `backend/SprintQuest.Api/Program.cs`
+* `backend/SprintQuest.Api/Controllers/ProjectsController.cs`
+* `backend/SprintQuest.Api/Controllers/SprintsController.cs`
+* `backend/SprintQuest.Api/Controllers/TaskItemsController.cs`
+* `backend/SprintQuest.Api/Controllers/ChecklistItemsController.cs`
+
+### Tests
+
+* `backend/SprintQuest.Tests/Application/ProjectRequestValidationTests.cs`
+* `backend/SprintQuest.Tests/Application/SprintRequestValidationTests.cs`
+* `backend/SprintQuest.Tests/Application/TaskRequestValidationTests.cs`
+* `backend/SprintQuest.Tests/Application/ChecklistRequestValidationTests.cs`
+
+## Verification Evidence
+
+### Automated Verification
+
+The backend solution successfully built after the security changes:
+
+```bash
+dotnet build backend/SprintQuest.sln
+```
+
+The complete backend test suite passed:
+
+```text
+Total tests: 69
+Passed: 69
+Failed: 0
+Skipped: 0
+```
+
+The test suite includes validation coverage for:
+
+* valid requests,
+* empty GUID values,
+* whitespace-only text,
+* maximum-length boundaries,
+* values exceeding maximum lengths,
+* negative task values,
+* undefined enum values,
+* missing sprint dates,
+* invalid sprint date order.
+
+### Manual Request-Validation Verification
+
+An invalid task request containing:
+
+* an empty sprint ID,
+* a whitespace-only title,
+* an undefined priority,
+* negative story points,
+* a negative XP reward,
+
+returned:
+
+```text
+HTTP/1.1 400 Bad Request
+Content-Type: application/problem+json
+```
+
+The response contained field-specific validation errors for:
+
+* `SprintId`,
+* `Title`,
+* `Priority`,
+* `StoryPoints`,
+* `XpReward`.
+
+A structurally valid task request referencing a sprint that did not exist returned:
+
+```text
+HTTP/1.1 404 Not Found
+```
+
+This confirmed the separation between request validation and service-level parent-record checks.
+
+### Manual Rate-Limiting Verification
+
+Twelve requests were sent rapidly from the same client.
+
+The results were:
+
+```text
+Requests 1–10: HTTP 200 OK
+Requests 11–12: HTTP 429 Too Many Requests
+```
+
+After waiting eleven seconds for the fixed window to reset, another request returned:
+
+```text
+HTTP 200 OK
+```
+
+This confirmed that:
+
+* normal API traffic is permitted,
+* excessive traffic is rejected,
+* rejected requests receive the correct HTTP status,
+* normal access resumes after the window resets.
+
+## Scope Confirmation
+
+M9 intentionally did not add:
+
+* authentication,
+* JWT tokens,
+* user accounts,
+* password hashing,
+* role-based authorisation,
+* SignalR,
+* Redis,
+* distributed rate limiting.
+
+These features were unnecessary for demonstrating the two selected security measures and would have created excessive milestone scope.
