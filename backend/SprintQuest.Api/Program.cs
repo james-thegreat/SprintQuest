@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
 using SprintQuest.Infrastructure;
+using SprintQuest.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +54,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -75,5 +77,7 @@ app.UseAuthorization();
 
 app.MapControllers()
     .RequireRateLimiting(ApiRateLimitPolicy);
+
+app.MapHub<BoardHub>("/hubs/board");
 
 app.Run();
