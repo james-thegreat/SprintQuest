@@ -39,10 +39,6 @@ public class ProjectsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProjectDto>> Create(CreateProjectRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return BadRequest("Project name is required.");
-        }
 
         var project = await _projectService.CreateAsync(request);
 
@@ -52,10 +48,6 @@ public class ProjectsController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, UpdateProjectRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return BadRequest("Project name is required.");
-        }
 
         var updated = await _projectService.UpdateAsync(id, request);
 
