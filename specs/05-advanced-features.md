@@ -137,35 +137,88 @@ M9 completed SprintQuest's second selected advanced assessment feature.
 
 ## 3. SignalR WebSockets
 
-**Status:** Planned for M10
+**Status:** Completed in M10
 
-SprintQuest will use SignalR to provide live board updates through WebSockets.
+SprintQuest uses ASP.NET Core SignalR to synchronize live board changes across connected browser clients.
 
-Planned live events include:
+Implemented live events:
 
-* task created,
-* task updated,
-* task moved between statuses,
-* task deleted,
-* task completed,
-* achievement unlocked.
+* `TaskCreated`
+* `TaskUpdated`
+* `TaskDeleted`
 
-The planned architecture is:
+Task status changes use `TaskUpdated` because the authoritative task payload contains the task's latest status.
+
+The implemented architecture is:
 
 ```text
-ASP.NET Core service or controller
+Browser client
+    ↓ REST request
+ASP.NET Core controller
     ↓
-SignalR BoardHub
+Task service and EF Core persistence
+    ↓
+SignalR BoardHub broadcast
     ↓
 Connected React clients
     ↓
-Zustand board and gamification stores
+Zustand board store
+    ↓
+React board rerenders
 ```
 
-SignalR has intentionally not been added during M9 so the security milestone remains controlled and focused.
+REST remains the authoritative write path. SignalR broadcasts changes only after the related database operation succeeds.
+
+The SignalR hub is exposed at:
+
+```text
+/hubs/board
+```
+
+The frontend uses the official:
+
+```text
+@microsoft/signalr
+```
+
+JavaScript client with automatic reconnection.
+
+Incoming events are reconciled through Zustand:
+
+* created tasks are added or replaced by task ID,
+* updated tasks replace the matching task by ID,
+* deleted tasks are removed by ID,
+* gamification data refreshes after relevant live task updates.
+
+This reconciliation prevents duplicate task cards when the initiating browser receives its own SignalR event.
+
+Manual verification using two browser clients confirmed:
+
+* both clients connected through WebSockets,
+* task creation appeared in both clients,
+* status movement worked across all board columns,
+* task deletion synchronized in both directions,
+* duplicate task cards were not created,
+* XP summaries refreshed correctly,
+* XP was awarded only once,
+* clients automatically reconnected after the backend restarted,
+* live events continued working after reconnection.
+
+Important implementation files:
+
+* `backend/SprintQuest.Api/Hubs/BoardHub.cs`
+* `backend/SprintQuest.Api/Program.cs`
+* `backend/SprintQuest.Api/Controllers/TaskItemsController.cs`
+* `frontend/sprintquest-ui/src/realtime/boardHubConnection.ts`
+* `frontend/sprintquest-ui/src/stores/useBoardStore.ts`
+* `frontend/sprintquest-ui/src/stores/useGamificationStore.ts`
+* `frontend/sprintquest-ui/src/pages/BoardPage.tsx`
+* `specs/m10-signalr-live-board.md`
+
+M10 completed SprintQuest's third selected advanced assessment feature.
 
 ## Assessment Checklist
 
 * [x] State management library — Zustand
 * [x] Security measures — request validation and rate limiting
-* [ ] WebSockets — SignalR live board updates
+* [x] WebSockets — SignalR live-board updates

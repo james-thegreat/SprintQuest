@@ -15,8 +15,14 @@ export function createTask(request: CreateTaskRequest) {
   return apiPost<SprintTask, CreateTaskRequest>(TASK_ITEMS_PATH, request);
 }
 
-export function updateTask(taskId: string, request: UpdateTaskRequest) {
-  return apiPut<UpdateTaskRequest>(`${TASK_ITEMS_PATH}/${taskId}`, request);
+export function updateTask(
+  taskId: string,
+  request: UpdateTaskRequest,
+) {
+  return apiPut<SprintTask, UpdateTaskRequest>(
+    `${TASK_ITEMS_PATH}/${taskId}`,
+    request,
+  );
 }
 
 export function deleteTask(taskId: string) {

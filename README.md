@@ -105,9 +105,15 @@ The top three advanced features selected for assessment are:
   * Excessive requests return `429 Too Many Requests`.
   * See `specs/m9-security-measures.md`.
 
-* [ ] **WebSockets — SignalR live board updates**
+* [x] **WebSockets — SignalR live board updates**
 
-  * Planned for M10.
+  * ASP.NET Core SignalR synchronizes task creation, task updates, status movement, and task deletion across connected browser clients.
+  * Incoming events are reconciled through Zustand by task ID to prevent duplicate task cards.
+  * Gamification summaries refresh after relevant live task updates.
+  * Automatic reconnection restores the live-board connection after temporary backend interruptions.
+  * Two-client testing confirmed that board changes appear without manually refreshing the page.
+  * See `specs/m10-signalr-live-board.md`.
+
 
 Optional extra if time allows:
 
