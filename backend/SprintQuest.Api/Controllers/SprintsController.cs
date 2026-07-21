@@ -45,23 +45,9 @@ public class SprintsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<SprintDto>> Create(CreateSprintRequest request)
+    public async Task<ActionResult<SprintDto>> Create(
+        CreateSprintRequest request)
     {
-        if (request.ProjectId == Guid.Empty)
-        {
-            return BadRequest("Project id is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return BadRequest("Sprint name is required.");
-        }
-
-        if (request.EndDate < request.StartDate)
-        {
-            return BadRequest("Sprint end date cannot be before start date.");
-        }
-
         var sprint = await _sprintService.CreateAsync(request);
 
         if (sprint is null)
@@ -69,22 +55,17 @@ public class SprintsController : ControllerBase
             return NotFound("Project not found.");
         }
 
-        return CreatedAtAction(nameof(GetById), new { id = sprint.Id }, sprint);
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = sprint.Id },
+            sprint);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, UpdateSprintRequest request)
+    public async Task<IActionResult> Update(
+        Guid id,
+        UpdateSprintRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return BadRequest("Sprint name is required.");
-        }
-
-        if (request.EndDate < request.StartDate)
-        {
-            return BadRequest("Sprint end date cannot be before start date.");
-        }
-
         var updated = await _sprintService.UpdateAsync(id, request);
 
         if (!updated)

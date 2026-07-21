@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SprintQuest.Application.DTOs.TaskItems;
 using SprintQuest.Application.Interfaces;
+using Microsoft.AspNetCore.SignalR;
+using SprintQuest.Api.Hubs;
 
 namespace SprintQuest.Api.Controllers;
 
@@ -9,10 +11,14 @@ namespace SprintQuest.Api.Controllers;
 public class TaskItemsController : ControllerBase
 {
     private readonly ITaskItemService _taskItemService;
+    private readonly IHubContext<BoardHub> _boardHubContext;
 
-    public TaskItemsController(ITaskItemService taskItemService)
+    public TaskItemsController(
+        ITaskItemService taskItemService,
+        IHubContext<BoardHub> boardHubContext)
     {
         _taskItemService = taskItemService;
+        _boardHubContext = boardHubContext;
     }
 
     [HttpGet]
@@ -45,28 +51,9 @@ public class TaskItemsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<TaskItemDto>> Create(CreateTaskItemRequest request)
+    public async Task<ActionResult<TaskItemDto>> Create(
+        CreateTaskItemRequest request)
     {
-        if (request.SprintId == Guid.Empty)
-        {
-            return BadRequest("Sprint id is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest("Task title is required.");
-        }
-
-        if (request.StoryPoints < 0)
-        {
-            return BadRequest("Story points cannot be negative.");
-        }
-
-        if (request.XpReward < 0)
-        {
-            return BadRequest("XP reward cannot be negative.");
-        }
-
         var task = await _taskItemService.CreateAsync(request);
 
         if (task is null)
@@ -74,35 +61,33 @@ public class TaskItemsController : ControllerBase
             return NotFound("Sprint not found.");
         }
 
-        return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
+        await _boardHubContext.Clients.All.SendAsync(
+            "TaskCreated",
+            task);
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = task.Id },
+            task);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, UpdateTaskItemRequest request)
+    public async Task<ActionResult<TaskItemDto>> Update(
+        Guid id,
+        UpdateTaskItemRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest("Task title is required.");
-        }
+        var updatedTask = await _taskItemService.UpdateAsync(id, request);
 
-        if (request.StoryPoints < 0)
-        {
-            return BadRequest("Story points cannot be negative.");
-        }
-
-        if (request.XpReward < 0)
-        {
-            return BadRequest("XP reward cannot be negative.");
-        }
-
-        var updated = await _taskItemService.UpdateAsync(id, request);
-
-        if (!updated)
+        if (updatedTask is null)
         {
             return NotFound();
         }
 
-        return NoContent();
+        await _boardHubContext.Clients.All.SendAsync(
+            "TaskUpdated",
+            updatedTask);
+
+        return Ok(updatedTask);
     }
 
     [HttpDelete("{id:guid}")]
@@ -114,6 +99,10 @@ public class TaskItemsController : ControllerBase
         {
             return NotFound();
         }
+
+        await _boardHubContext.Clients.All.SendAsync(
+            "TaskDeleted",
+            new { TaskId = id });
 
         return NoContent();
     }

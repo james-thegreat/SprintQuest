@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5087';
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -30,7 +31,10 @@ export async function apiPost<TResponse, TRequest>(path: string, body: TRequest)
   return handleResponse<TResponse>(response);
 }
 
-export async function apiPut<TRequest>(path: string, body: TRequest): Promise<void> {
+export async function apiPut<TResponse, TRequest>(
+  path: string,
+  body: TRequest,
+): Promise<TResponse> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'PUT',
     headers: {
@@ -39,7 +43,7 @@ export async function apiPut<TRequest>(path: string, body: TRequest): Promise<vo
     body: JSON.stringify(body),
   });
 
-  return handleResponse<void>(response);
+  return handleResponse<TResponse>(response);
 }
 
 export async function apiDelete(path: string): Promise<void> {

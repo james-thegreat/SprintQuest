@@ -91,15 +91,34 @@ frontend/
 
 ## Advanced Features
 
-The top three advanced features planned for assessment are:
+The top three advanced features selected for assessment are:
 
-* [x] Zustand state management
-* [ ] Security measures
-* [ ] SignalR WebSockets
+* [x] **State management library — Zustand**
+
+  * Shared board and gamification state is managed through dedicated Zustand stores.
+  * See `specs/m8-zustand-state-management.md`.
+
+* [x] **Security measures — request validation and rate limiting**
+
+  * Application-layer DTO validation rejects malformed, oversized, and unsupported input with structured `400 Bad Request` responses.
+  * ASP.NET Core rate limiting allows 10 controller requests per client IP during each 10-second window.
+  * Excessive requests return `429 Too Many Requests`.
+  * See `specs/m9-security-measures.md`.
+
+* [x] **WebSockets — SignalR live board updates**
+
+  * ASP.NET Core SignalR synchronizes task creation, task updates, status movement, and task deletion across connected browser clients.
+  * Incoming events are reconciled through Zustand by task ID to prevent duplicate task cards.
+  * Gamification summaries refresh after relevant live task updates.
+  * Automatic reconnection restores the live-board connection after temporary backend interruptions.
+  * Two-client testing confirmed that board changes appear without manually refreshing the page.
+  * See `specs/m10-signalr-live-board.md`.
+
 
 Optional extra if time allows:
 
 * [ ] Theme switching
+
 
 ---
 
