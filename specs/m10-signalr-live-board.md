@@ -180,3 +180,123 @@ M10 will not introduce:
 6. Add Zustand reconciliation actions.
 7. Add the frontend SignalR connection.
 8. Verify the feature across two browser clients.
+
+
+## Manual Verification
+
+Manual verification was completed on 22 July 2026 using two separate browser clients connected to the SprintQuest frontend.
+
+### Environment
+
+```text
+Backend API: http://localhost:5087
+Frontend: http://localhost:5173
+SignalR hub: /hubs/board
+Transport: WebSockets
+Protocol: JSON
+```
+
+The browser console confirmed:
+
+```text
+WebSocket connected to ws://localhost:5087/hubs/board
+Using HubProtocol 'json'
+SprintQuest live-board connection started.
+```
+
+### Build and Test Results
+
+Backend verification:
+
+```text
+dotnet build backend/SprintQuest.sln
+Build succeeded
+```
+
+```text
+dotnet test backend/SprintQuest.sln
+69 tests passed
+0 tests failed
+0 tests skipped
+```
+
+Frontend verification:
+
+```text
+npm run build
+TypeScript compilation passed
+Vite 8.1.3 production build passed
+68 frontend modules transformed
+```
+
+Vite displayed non-blocking `INVALID_ANNOTATION` warnings originating from pure-annotation comments inside the `@microsoft/signalr` package. The production build still completed successfully.
+
+### Two-Client Verification Results
+
+| Test                     | Expected result                                          | Actual result |
+| ------------------------ | -------------------------------------------------------- | ------------- |
+| Both clients connect     | Both clients establish a SignalR connection              | Passed        |
+| Task created             | A task created in one client appears in the other        | Passed        |
+| Reverse task creation    | A task created in the second client appears in the first | Passed        |
+| Duplicate prevention     | The initiating client displays only one task card        | Passed        |
+| Task status update       | The task moves to the matching column in both clients    | Passed        |
+| All status columns       | Live movement works across every task status             | Passed        |
+| Task deletion            | A deleted task disappears from both clients              | Passed        |
+| Gamification refresh     | Total XP updates in both connected clients               | Passed        |
+| XP duplication           | Completing a task awards XP only once                    | Passed        |
+| Reconnection             | Clients reconnect after the backend restarts             | Passed        |
+| Post-reconnection events | Live task updates resume after reconnection              | Passed        |
+| UI resilience            | The board remains visible during temporary disconnection | Passed        |
+
+### Task Creation Verification
+
+A task created in client A appeared automatically in client B without a page refresh.
+
+A second task created in client B appeared automatically in client A.
+
+The initiating client received its own `TaskCreated` event safely. Zustand reconciled the event by task ID, so duplicate task cards were not created.
+
+### Task Update Verification
+
+Changing a task status in one client moved the same task to the correct board column in the other client.
+
+Live updates were verified across all statuses:
+
+```text
+Backlog
+To Do
+In Progress
+Testing
+Done
+```
+
+The initiating browser continued to use its optimistic Zustand update. The server then returned and broadcast the authoritative task state, which safely replaced the optimistic version.
+
+### Task Deletion Verification
+
+Deleting a task in one client removed it from the other connected client without a page refresh.
+
+The initiating browser also received its own `TaskDeleted` event without producing an error. Removing tasks by ID made repeated deletion handling idempotent.
+
+### Gamification Verification
+
+A task with a known XP reward was moved to `Done`.
+
+Both connected clients refreshed their gamification summaries and displayed the updated Total XP.
+
+Refreshing the browsers did not award the XP again, confirming that SignalR synchronized the task state without duplicating the backend XP event.
+
+### Reconnection Verification
+
+The backend API was stopped while both frontend clients remained open.
+
+The board remained visible, and the frontend did not crash.
+
+After the backend was restarted, both clients automatically reconnected through SignalR. A subsequent task change was synchronized successfully across both clients.
+
+### Verification Conclusion
+
+The manual verification demonstrates that SprintQuest can synchronize task creation, task updates, status movement, deletion, and related gamification changes across connected browser clients without requiring manual page refreshes.
+
+This completes the practical verification for SprintQuest’s SignalR WebSockets advanced feature.
+
