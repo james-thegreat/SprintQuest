@@ -10,6 +10,7 @@ import {
   type TaskStatus,
 } from '../types/task';
 import { useGamificationStore } from '../stores/useGamificationStore';
+import { subscribeToBoardHub } from '../realtime/boardHubConnection';
 
 const defaultSprintId = '9ed966c5-43b8-4b05-8254-cf40666e4b25';
 
@@ -66,7 +67,11 @@ export function BoardPage() {
       void loadGamificationSummary();
     }, [loadGamificationSummary]);
 
+    useEffect(() => {
+      const unsubscribe = subscribeToBoardHub();
 
+      return unsubscribe;
+    }, []);
 
     async function handleStatusChange(
       task: SprintTask,
