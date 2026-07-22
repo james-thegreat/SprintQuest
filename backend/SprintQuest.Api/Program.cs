@@ -7,20 +7,28 @@ using SprintQuest.Api.Hubs;
 var builder = WebApplication.CreateBuilder(args);
 
 const string ApiRateLimitPolicy = "ApiRateLimit";
+const string FrontendCorsPolicy = "FrontendCors";
 
 var databaseConnectionString = builder.Configuration.GetConnectionString(
     "SprintQuestDatabase")
     ?? throw new InvalidOperationException(
         "Connection string 'SprintQuestDatabase' was not found.");
 
+var allowedOrigins =
+    builder.Configuration
+        .GetSection("AllowedOrigins")
+        .Get<string[]>()
+    ?? throw new InvalidOperationException(
+        "At least one allowed frontend origin must be configured.");
+
 builder.Services.AddInfrastructure(databaseConnectionString!);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendDev", policy =>
+    options.AddPolicy(FrontendCorsPolicy, policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -70,7 +78,7 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
-app.UseCors("FrontendDev");
+app.UseCors(FrontendCorsPolicy);
 
 app.UseRateLimiter();
 
