@@ -1,8 +1,10 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using SprintQuest.Infrastructure;
 using SprintQuest.Api.Hubs;
+using SprintQuest.Infrastructure;
+using SprintQuest.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,10 @@ var allowedOrigins =
 var apiDocumentationEnabled =
     builder.Configuration.GetValue<bool>(
         "ApiDocumentation:Enabled");
+
+var applyMigrationsOnStartup =
+    builder.Configuration.GetValue<bool>(
+        "Database:ApplyMigrationsOnStartup");
 
 builder.Services.AddInfrastructure(databaseConnectionString!);
 
@@ -71,6 +77,23 @@ builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+if (applyMigrationsOnStartup)
+{
+    await using var scope = app.Services.CreateAsyncScope();
+
+    var dbContext =
+        scope.ServiceProvider
+            .GetRequiredService<SprintQuestDbContext>();
+
+    app.Logger.LogInformation(
+        "Applying pending SprintQuest database migrations.");
+
+    await dbContext.Database.MigrateAsync();
+
+    app.Logger.LogInformation(
+        "SprintQuest database migrations completed.");
+}
 
 if (apiDocumentationEnabled)
 {
