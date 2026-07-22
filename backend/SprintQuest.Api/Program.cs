@@ -1,26 +1,44 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using SprintQuest.Infrastructure;
 using SprintQuest.Api.Hubs;
+using SprintQuest.Infrastructure;
+using SprintQuest.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
 const string ApiRateLimitPolicy = "ApiRateLimit";
+const string FrontendCorsPolicy = "FrontendCors";
 
 var databaseConnectionString = builder.Configuration.GetConnectionString(
     "SprintQuestDatabase")
     ?? throw new InvalidOperationException(
         "Connection string 'SprintQuestDatabase' was not found.");
 
+var allowedOrigins =
+    builder.Configuration
+        .GetSection("AllowedOrigins")
+        .Get<string[]>()
+    ?? throw new InvalidOperationException(
+        "At least one allowed frontend origin must be configured.");
+
+var apiDocumentationEnabled =
+    builder.Configuration.GetValue<bool>(
+        "ApiDocumentation:Enabled");
+
+var applyMigrationsOnStartup =
+    builder.Configuration.GetValue<bool>(
+        "Database:ApplyMigrationsOnStartup");
+
 builder.Services.AddInfrastructure(databaseConnectionString!);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendDev", policy =>
+    options.AddPolicy(FrontendCorsPolicy, policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -60,7 +78,24 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+if (applyMigrationsOnStartup)
+{
+    await using var scope = app.Services.CreateAsyncScope();
+
+    var dbContext =
+        scope.ServiceProvider
+            .GetRequiredService<SprintQuestDbContext>();
+
+    app.Logger.LogInformation(
+        "Applying pending SprintQuest database migrations.");
+
+    await dbContext.Database.MigrateAsync();
+
+    app.Logger.LogInformation(
+        "SprintQuest database migrations completed.");
+}
+
+if (apiDocumentationEnabled)
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
@@ -70,7 +105,7 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
-app.UseCors("FrontendDev");
+app.UseCors(FrontendCorsPolicy);
 
 app.UseRateLimiter();
 
