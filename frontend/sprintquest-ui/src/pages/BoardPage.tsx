@@ -166,9 +166,10 @@ export function BoardPage() {
                 <strong>{sprintProgressPercentage}%</strong>
 
                 <progress
-                    className="sprint-progress-bar"
-                    max="100"
-                    value={sprintProgressPercentage}
+                  aria-label="Sprint progress"
+                  className="sprint-progress-bar"
+                  max="100"
+                  value={sprintProgressPercentage}
                 >
                     {sprintProgressPercentage}%
                 </progress>
@@ -284,7 +285,11 @@ export function BoardPage() {
           const columnTasks = tasks.filter((task) => task.status === column);
 
           return (
-            <section className="board-column" key={column}>
+            <section
+              className="board-column"
+              aria-label={`${taskStatusLabels[column]} column`}
+              key={column}
+            >
               <div className="board-column-header">
                 <h2>{taskStatusLabels[column]}</h2>
                 <span>{columnTasks.length}</span>
