@@ -12,7 +12,7 @@ import {
 import { useGamificationStore } from '../stores/useGamificationStore';
 import { subscribeToBoardHub } from '../realtime/boardHubConnection';
 
-const defaultSprintId = '9ed966c5-43b8-4b05-8254-cf40666e4b25';
+const defaultSprintId = import.meta.env.VITE_DEFAULT_SPRINT_ID;
 
 export function BoardPage() {
 
@@ -99,6 +99,13 @@ export function BoardPage() {
 
       if (!trimmedTitle) {
         setErrorMessage('Task title is required.');
+        return;
+      }
+
+      if (!defaultSprintId) {
+        setErrorMessage(
+          'The default sprint is not configured.',
+        );
         return;
       }
 

@@ -21,6 +21,7 @@ env:
   NODE_VERSION: "22"
   FRONTEND_DIRECTORY: frontend/sprintquest-ui
   VITE_API_BASE_URL: https://sprintquest-api-jd-2026-bpd5gyhzghhxgdgt.australiaeast-01.azurewebsites.net
+  VITE_DEFAULT_SPRINT_ID: f3189605-5fb1-4b66-a9d7-f545bbf17407
 
 jobs:
   deploy:
