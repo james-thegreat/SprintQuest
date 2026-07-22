@@ -21,6 +21,10 @@ var allowedOrigins =
     ?? throw new InvalidOperationException(
         "At least one allowed frontend origin must be configured.");
 
+var apiDocumentationEnabled =
+    builder.Configuration.GetValue<bool>(
+        "ApiDocumentation:Enabled");
+
 builder.Services.AddInfrastructure(databaseConnectionString!);
 
 builder.Services.AddCors(options =>
@@ -68,7 +72,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+if (apiDocumentationEnabled)
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
