@@ -1,8 +1,10 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using SprintQuest.Infrastructure;
 using SprintQuest.Api.Hubs;
+using SprintQuest.Infrastructure;
+using SprintQuest.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,14 @@ var allowedOrigins =
         .Get<string[]>()
     ?? throw new InvalidOperationException(
         "At least one allowed frontend origin must be configured.");
+
+var apiDocumentationEnabled =
+    builder.Configuration.GetValue<bool>(
+        "ApiDocumentation:Enabled");
+
+var applyMigrationsOnStartup =
+    builder.Configuration.GetValue<bool>(
+        "Database:ApplyMigrationsOnStartup");
 
 builder.Services.AddInfrastructure(databaseConnectionString!);
 
@@ -68,7 +78,24 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+if (applyMigrationsOnStartup)
+{
+    await using var scope = app.Services.CreateAsyncScope();
+
+    var dbContext =
+        scope.ServiceProvider
+            .GetRequiredService<SprintQuestDbContext>();
+
+    app.Logger.LogInformation(
+        "Applying pending SprintQuest database migrations.");
+
+    await dbContext.Database.MigrateAsync();
+
+    app.Logger.LogInformation(
+        "SprintQuest database migrations completed.");
+}
+
+if (apiDocumentationEnabled)
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
