@@ -163,17 +163,51 @@ Coming soon
 
 ## Testing
 
-Backend testing:
+SprintQuest includes automated backend and frontend tests covering domain rules, request validation, persistence-related service behaviour, Zustand state management, optimistic rollback, and key sprint-board UI behaviour.
 
-```text
-Coming soon
+### Backend
+
+Run from the repository root:
+
+```bash
+dotnet build backend/SprintQuest.sln
+dotnet test backend/SprintQuest.sln
 ```
 
-Frontend testing:
+Current verified result:
 
 ```text
-Coming soon
+79 tests passed
+0 tests failed
+0 tests skipped
 ```
+
+### Frontend
+
+Run from the frontend project:
+
+```bash
+cd frontend/sprintquest-ui
+npm test
+npm run build
+```
+
+Watch mode:
+
+```bash
+npm run test:watch
+```
+
+Current verified result:
+
+```text
+3 test files passed
+15 tests passed
+0 tests failed
+Production build passed
+```
+
+See [`specs/m11-testing.md`](specs/m11-testing.md) for the complete testing strategy, commands, evidence, and known limitations.
 
 ---
 
