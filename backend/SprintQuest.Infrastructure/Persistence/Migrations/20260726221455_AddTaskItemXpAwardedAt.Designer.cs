@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SprintQuest.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using SprintQuest.Infrastructure.Persistence;
 namespace SprintQuest.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SprintQuestDbContext))]
-    partial class SprintQuestDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260726221455_AddTaskItemXpAwardedAt")]
+    partial class AddTaskItemXpAwardedAt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
