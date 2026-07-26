@@ -249,6 +249,100 @@ public class TaskItemServiceTests
     }
 
     [Fact]
+    public async Task UpdateAsync_WhenReopenedAfterXpAward_DoesNotDuplicateXpEvent()
+    {
+        // Arrange
+        using var database = new SqliteTestDatabase();
+
+        var project = new Project("Repeated XP Test Project");
+
+        var sprint = new Sprint(
+            project.Id,
+            "Repeated XP Test Sprint",
+            DateTime.UtcNow.Date,
+            DateTime.UtcNow.Date.AddDays(14));
+
+        var task = new TaskItem(
+            sprint.Id,
+            "Prevent repeated completion XP",
+            xpReward: 40);
+
+        database.Context.Projects.Add(project);
+        database.Context.Sprints.Add(sprint);
+        database.Context.TaskItems.Add(task);
+        await database.Context.SaveChangesAsync();
+
+        var doneRequest = new UpdateTaskItemRequest
+        {
+            Title = task.Title,
+            Description = task.Description,
+            Status = DomainTaskStatus.Done,
+            Priority = task.Priority,
+            StoryPoints = task.StoryPoints,
+            XpReward = task.XpReward
+        };
+
+        var reopenRequest = new UpdateTaskItemRequest
+        {
+            Title = task.Title,
+            Description = task.Description,
+            Status = DomainTaskStatus.ToDo,
+            Priority = task.Priority,
+            StoryPoints = task.StoryPoints,
+            XpReward = task.XpReward
+        };
+
+        var service = new TaskItemService(database.Context);
+
+        // Act
+        var firstCompletion = await service.UpdateAsync(
+            task.Id,
+            doneRequest);
+
+        database.Context.ChangeTracker.Clear();
+
+        var reopenedTask = await service.UpdateAsync(
+            task.Id,
+            reopenRequest);
+
+        database.Context.ChangeTracker.Clear();
+
+        var secondCompletion = await service.UpdateAsync(
+            task.Id,
+            doneRequest);
+
+        database.Context.ChangeTracker.Clear();
+
+        // Assert
+        Assert.NotNull(firstCompletion);
+        Assert.NotNull(reopenedTask);
+        Assert.NotNull(secondCompletion);
+
+        Assert.Equal(
+            DomainTaskStatus.Done,
+            secondCompletion.Status);
+
+        var xpEvents = await database.Context.XpEvents
+            .AsNoTracking()
+            .ToListAsync();
+
+        var xpEvent = Assert.Single(xpEvents);
+
+        Assert.Equal(40, xpEvent.Amount);
+
+        var persistedTask = await database.Context.TaskItems
+            .AsNoTracking()
+            .SingleAsync(savedTask => savedTask.Id == task.Id);
+
+        Assert.Equal(
+            DomainTaskStatus.Done,
+            persistedTask.Status);
+
+        Assert.NotNull(persistedTask.CompletedAt);
+        Assert.NotNull(persistedTask.XpAwardedAt);
+    }
+
+    [Fact]
     public async Task UpdateAsync_WhenTaskIsAlreadyDone_DoesNotDuplicateXpEvent()
     {
         // Arrange

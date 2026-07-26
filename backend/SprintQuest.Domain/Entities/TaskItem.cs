@@ -18,6 +18,7 @@ public class TaskItem
     public DateTime CreatedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
     public IReadOnlyCollection<ChecklistItem> ChecklistItems => _checklistItems.AsReadOnly();
+    public DateTime? XpAwardedAt { get; private set; }
 
     public TaskItem(
         Guid sprintId,
@@ -130,10 +131,12 @@ public class TaskItem
 
         Complete();
 
-        if (XpReward <= 0)
+        if (XpReward <= 0 || XpAwardedAt is not null)
         {
             return null;
         }
+
+        XpAwardedAt = DateTime.UtcNow;
 
         return new XpEvent(
             XpReward,

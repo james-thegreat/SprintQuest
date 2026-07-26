@@ -33,6 +33,8 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
         builder.Property(task => task.XpReward)
             .IsRequired();
 
+        builder.Property(task => task.XpAwardedAt);
+
         builder.HasMany(task => task.ChecklistItems)
             .WithOne()
             .HasForeignKey(item => item.TaskItemId)
