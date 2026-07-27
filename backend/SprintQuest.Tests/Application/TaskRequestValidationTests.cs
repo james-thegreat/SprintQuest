@@ -91,6 +91,19 @@ public class TaskRequestValidationTests
     }
 
     [Fact]
+    public void CreateRequest_WithZeroStoryPoints_IsInvalid()
+    {
+        var request = CreateValidRequest();
+        request.StoryPoints = 0;
+
+        var results = Validate(request);
+
+        Assert.Contains(
+            results,
+            result => result.MemberNames.Contains(nameof(request.StoryPoints)));
+    }
+
+    [Fact]
     public void CreateRequest_WithNegativeXpReward_IsInvalid()
     {
         var request = CreateValidRequest();
@@ -114,6 +127,26 @@ public class TaskRequestValidationTests
         Assert.Contains(
             results,
             result => result.MemberNames.Contains(nameof(request.Priority)));
+    }
+
+    [Fact]
+    public void UpdateRequest_WithZeroStoryPoints_IsInvalid()
+    {
+        var request = new UpdateTaskItemRequest
+        {
+            Title = "Update story points",
+            Description = null,
+            Status = DomainTaskStatus.InProgress,
+            Priority = Priority.Medium,
+            StoryPoints = 0,
+            XpReward = 30
+        };
+
+        var results = Validate(request);
+
+        Assert.Contains(
+            results,
+            result => result.MemberNames.Contains(nameof(request.StoryPoints)));
     }
 
     [Fact]
