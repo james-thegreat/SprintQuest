@@ -83,6 +83,8 @@ public class TaskItemTests
         Assert.Equal("Completed task: Finish gamification rule", xpEvent.Reason);
     }
 
+
+
     [Fact]
     public void CompleteForXp_WhenTaskIsAlreadyDone_DoesNotCreateDuplicateXpEvent()
     {
@@ -99,6 +101,29 @@ public class TaskItemTests
 
         // Assert
         Assert.Null(secondXpEvent);
+    }
+
+
+    [Fact]
+    public void CompleteForXp_WhenReopenedAfterXpAward_DoesNotCreateAnotherXpEvent()
+    {
+        // Arrange
+        var task = new TaskItem(
+            Guid.NewGuid(),
+            "Prevent repeated completion XP",
+            xpReward: 25);
+
+        // Act
+        var firstXpEvent = task.CompleteForXp();
+
+        task.Reopen();
+
+        var secondXpEvent = task.CompleteForXp();
+
+        // Assert
+        Assert.NotNull(firstXpEvent);
+        Assert.Null(secondXpEvent);
+        Assert.Equal(DomainTaskStatus.Done, task.Status);
     }
 
     [Fact]
