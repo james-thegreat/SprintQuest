@@ -6,7 +6,7 @@ namespace SprintQuest.Domain.Entities;
 public class TaskItem
 {
     private readonly List<ChecklistItem> _checklistItems = new();
-    
+
     public Guid Id { get; private set; }
     public Guid SprintId { get; private set; }
     public string Title { get; private set; }
@@ -38,9 +38,11 @@ public class TaskItem
             throw new ArgumentException("Task title is required.", nameof(title));
         }
 
-        if (storyPoints < 0)
+        if (storyPoints < 1)
         {
-            throw new ArgumentException("Story points cannot be negative.", nameof(storyPoints));
+            throw new ArgumentException(
+                "Story points must be at least 1.",
+                nameof(storyPoints));
         }
 
         if (xpReward < 0)
@@ -86,9 +88,11 @@ public class TaskItem
             throw new ArgumentException("Task title is required.", nameof(title));
         }
 
-        if (storyPoints < 0)
+        if (storyPoints < 1)
         {
-            throw new ArgumentException("Story points cannot be negative.", nameof(storyPoints));
+            throw new ArgumentException(
+                "Story points must be at least 1.",
+                nameof(storyPoints));
         }
 
         if (xpReward < 0)

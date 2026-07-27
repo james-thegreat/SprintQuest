@@ -50,6 +50,36 @@ public class TaskItemTests
     }
 
     [Fact]
+    public void Constructor_WithZeroStoryPoints_ThrowsArgumentException()
+    {
+        // Act + Assert
+        Assert.Throws<ArgumentException>(() =>
+            new TaskItem(
+                Guid.NewGuid(),
+                "Invalid story points",
+                storyPoints: 0));
+    }
+
+    [Fact]
+    public void UpdateDetails_WithZeroStoryPoints_ThrowsArgumentException()
+    {
+        // Arrange
+        var task = new TaskItem(
+            Guid.NewGuid(),
+            "Valid task",
+            storyPoints: 1);
+
+        // Act + Assert
+        Assert.Throws<ArgumentException>(() =>
+            task.UpdateDetails(
+                task.Title,
+                task.Description,
+                task.Priority,
+                storyPoints: 0,
+                xpReward: task.XpReward));
+    }
+
+    [Fact]
     public void Complete_SetsStatusToDoneAndSetsCompletedAt()
     {
         // Arrange

@@ -29,9 +29,9 @@ public class UpdateTaskItemRequest
     public Priority Priority { get; set; }
 
     [Range(
-        0,
+        1,
         100,
-        ErrorMessage = "Story points must be between 0 and 100.")]
+        ErrorMessage = "Story points must be between 1 and 100.")]
     public int StoryPoints { get; set; }
 
     [Range(
