@@ -26,9 +26,9 @@ public class CreateTaskItemRequest
     public Priority Priority { get; set; } = Priority.Medium;
 
     [Range(
-        0,
+        1,
         100,
-        ErrorMessage = "Story points must be between 0 and 100.")]
+        ErrorMessage = "Story points must be between 1 and 100.")]
     public int StoryPoints { get; set; } = 1;
 
     [Range(
