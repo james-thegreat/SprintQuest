@@ -3,7 +3,7 @@ name: Deploy SprintQuest API
 on:
   push:
     branches:
-      - release/deployment-prep
+      - main
     paths:
       - "backend/**"
       - ".github/workflows/deploy-backend.yml"

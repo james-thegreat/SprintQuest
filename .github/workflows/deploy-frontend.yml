@@ -3,7 +3,7 @@ name: Deploy SprintQuest Frontend
 on:
   push:
     branches:
-      - release/deployment-prep
+      - main
     paths:
       - "frontend/sprintquest-ui/**"
       - ".github/workflows/deploy-frontend.yml"
