@@ -368,3 +368,151 @@ describe('useAppSelectionStore sprint loading', () => {
     });
 
 });
+
+describe('useAppSelectionStore project selection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    useAppSelectionStore.setState({
+      projects: [firstProject, secondProject],
+      selectedProjectId: firstProject.id,
+      sprints: [firstSprint, secondSprint],
+      selectedSprintId: firstSprint.id,
+      isProjectsLoading: false,
+      isSprintsLoading: false,
+      projectsErrorMessage: null,
+      sprintsErrorMessage: null,
+      hasInitialised: false,
+    });
+  });
+
+  it('selects a valid project and clears the previous sprint context', () => {
+    const result = useAppSelectionStore
+      .getState()
+      .selectProject(secondProject.id);
+
+    expect(result).toBe(true);
+    expect(
+      useAppSelectionStore.getState().selectedProjectId,
+    ).toBe(secondProject.id);
+    expect(useAppSelectionStore.getState().sprints).toEqual([]);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBeNull();
+    expect(
+      useAppSelectionStore.getState().sprintsErrorMessage,
+    ).toBeNull();
+    expect(
+      useAppSelectionStore.getState().isSprintsLoading,
+    ).toBe(false);
+  });
+
+  it('rejects a project that is not in the loaded project list', () => {
+    const result = useAppSelectionStore
+      .getState()
+      .selectProject('missing-project');
+
+    expect(result).toBe(false);
+    expect(
+      useAppSelectionStore.getState().selectedProjectId,
+    ).toBe(firstProject.id);
+    expect(useAppSelectionStore.getState().sprints).toEqual([
+      firstSprint,
+      secondSprint,
+    ]);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBe(firstSprint.id);
+  });
+
+  it('invalidates an in-flight sprint request when selecting another project', async () => {
+    let resolveRequest!: (sprints: Sprint[]) => void;
+
+    const pendingRequest = new Promise<Sprint[]>((resolve) => {
+      resolveRequest = resolve;
+    });
+
+    vi.mocked(getSprintsByProjectId).mockReturnValue(
+      pendingRequest,
+    );
+
+    const requestPromise = useAppSelectionStore
+      .getState()
+      .loadSprints(firstProject.id);
+
+    expect(
+      useAppSelectionStore.getState().isSprintsLoading,
+    ).toBe(true);
+
+    const selectionResult = useAppSelectionStore
+      .getState()
+      .selectProject(secondProject.id);
+
+    expect(selectionResult).toBe(true);
+    expect(
+      useAppSelectionStore.getState().selectedProjectId,
+    ).toBe(secondProject.id);
+    expect(useAppSelectionStore.getState().sprints).toEqual([]);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBeNull();
+    expect(
+      useAppSelectionStore.getState().isSprintsLoading,
+    ).toBe(false);
+
+    resolveRequest([firstSprint, secondSprint]);
+
+    const requestResult = await requestPromise;
+
+    expect(requestResult).toBe(false);
+    expect(
+      useAppSelectionStore.getState().selectedProjectId,
+    ).toBe(secondProject.id);
+    expect(useAppSelectionStore.getState().sprints).toEqual([]);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBeNull();
+  });
+});
+
+describe('useAppSelectionStore sprint selection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    useAppSelectionStore.setState({
+      projects: [firstProject],
+      selectedProjectId: firstProject.id,
+      sprints: [firstSprint, secondSprint],
+      selectedSprintId: firstSprint.id,
+      isProjectsLoading: false,
+      isSprintsLoading: false,
+      projectsErrorMessage: null,
+      sprintsErrorMessage: null,
+      hasInitialised: false,
+    });
+  });
+
+  it('selects a valid sprint from the loaded sprint list', () => {
+    const result = useAppSelectionStore
+      .getState()
+      .selectSprint(secondSprint.id);
+
+    expect(result).toBe(true);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBe(secondSprint.id);
+  });
+
+  it('rejects a sprint that is not in the loaded sprint list', () => {
+    const result = useAppSelectionStore
+      .getState()
+      .selectSprint('missing-sprint');
+
+    expect(result).toBe(false);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBe(firstSprint.id);
+  });
+
+
+});

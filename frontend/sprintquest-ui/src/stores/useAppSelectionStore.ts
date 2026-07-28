@@ -23,6 +23,8 @@ type AppSelectionStore = {
 
   loadProjects: () => Promise<boolean>;
   loadSprints: (projectId: string) => Promise<boolean>;
+  selectProject: (projectId: string) => boolean;
+  selectSprint: (sprintId: string) => boolean;
 };
 
 export const useAppSelectionStore =
@@ -92,64 +94,102 @@ export const useAppSelectionStore =
       }
     },
 
-        loadSprints: async (projectId) => {
-      const requestId = ++latestSprintsRequestId;
-
-      set({
-        isSprintsLoading: true,
-        sprintsErrorMessage: null,
-      });
-
-      try {
-        const sprints = await getSprintsByProjectId(projectId);
-
-        const requestIsStale =
-          requestId !== latestSprintsRequestId ||
-          get().selectedProjectId !== projectId;
-
-        if (requestIsStale) {
-          return false;
-        }
-
-        const previousSprintId = get().selectedSprintId;
-
-        const selectedSprintId =
-          sprints.some(
-            (sprint) => sprint.id === previousSprintId,
-          )
-            ? previousSprintId
-            : sprints[0]?.id ?? null;
+    loadSprints: async (projectId) => {
+        const requestId = ++latestSprintsRequestId;
 
         set({
-          sprints,
-          selectedSprintId,
-          sprintsErrorMessage: null,
+            isSprintsLoading: true,
+            sprintsErrorMessage: null,
+        });
+
+        try {
+            const sprints = await getSprintsByProjectId(projectId);
+
+            const requestIsStale =
+            requestId !== latestSprintsRequestId ||
+            get().selectedProjectId !== projectId;
+
+            if (requestIsStale) {
+            return false;
+            }
+
+            const previousSprintId = get().selectedSprintId;
+
+            const selectedSprintId =
+            sprints.some(
+                (sprint) => sprint.id === previousSprintId,
+            )
+                ? previousSprintId
+                : sprints[0]?.id ?? null;
+
+            set({
+            sprints,
+            selectedSprintId,
+            sprintsErrorMessage: null,
+            });
+
+            return true;
+        } catch {
+            const requestIsStale =
+            requestId !== latestSprintsRequestId ||
+            get().selectedProjectId !== projectId;
+
+            if (requestIsStale) {
+            return false;
+            }
+
+            set({
+            sprints: [],
+            selectedSprintId: null,
+            sprintsErrorMessage:
+                'Could not load sprints. Please try again.',
+            });
+
+            return false;
+        } finally {
+            if (requestId === latestSprintsRequestId) {
+            set({
+                isSprintsLoading: false,
+            });
+            }
+        }
+    },
+
+    selectProject: (projectId) => {
+        const projectExists = get().projects.some(
+            (project) => project.id === projectId,
+        );
+
+        if (!projectExists) {
+            return false;
+        }
+
+        latestSprintsRequestId += 1;
+
+        set({
+            selectedProjectId: projectId,
+            sprints: [],
+            selectedSprintId: null,
+            isSprintsLoading: false,
+            sprintsErrorMessage: null,
         });
 
         return true;
-      } catch {
-        const requestIsStale =
-          requestId !== latestSprintsRequestId ||
-          get().selectedProjectId !== projectId;
+    },
 
-        if (requestIsStale) {
-          return false;
+    selectSprint: (sprintId) => {
+        const sprintExists = get().sprints.some(
+            (sprint) => sprint.id === sprintId,
+        );
+
+        if (!sprintExists) {
+            return false;
         }
 
         set({
-          sprints: [],
-          selectedSprintId: null,
-          sprintsErrorMessage:
-            'Could not load sprints. Please try again.',
+            selectedSprintId: sprintId,
         });
 
-        return false;
-      } finally {
-        if (requestId === latestSprintsRequestId) {
-          set({
-            isSprintsLoading: false,
-          });
-        }
-      }
+        return true;
     },
   }));
