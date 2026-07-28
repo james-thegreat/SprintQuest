@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { getProjects } from '../api/projectsApi';
+import { getSprintsByProjectId } from '../api/sprintsApi';
 import type { Project } from '../types/project';
 import type { Sprint } from '../types/sprint';
+
+let latestSprintsRequestId = 0;
 
 type AppSelectionStore = {
   projects: Project[];
@@ -19,6 +22,7 @@ type AppSelectionStore = {
   hasInitialised: boolean;
 
   loadProjects: () => Promise<boolean>;
+  loadSprints: (projectId: string) => Promise<boolean>;
 };
 
 export const useAppSelectionStore =
@@ -85,6 +89,67 @@ export const useAppSelectionStore =
         set({
           isProjectsLoading: false,
         });
+      }
+    },
+
+        loadSprints: async (projectId) => {
+      const requestId = ++latestSprintsRequestId;
+
+      set({
+        isSprintsLoading: true,
+        sprintsErrorMessage: null,
+      });
+
+      try {
+        const sprints = await getSprintsByProjectId(projectId);
+
+        const requestIsStale =
+          requestId !== latestSprintsRequestId ||
+          get().selectedProjectId !== projectId;
+
+        if (requestIsStale) {
+          return false;
+        }
+
+        const previousSprintId = get().selectedSprintId;
+
+        const selectedSprintId =
+          sprints.some(
+            (sprint) => sprint.id === previousSprintId,
+          )
+            ? previousSprintId
+            : sprints[0]?.id ?? null;
+
+        set({
+          sprints,
+          selectedSprintId,
+          sprintsErrorMessage: null,
+        });
+
+        return true;
+      } catch {
+        const requestIsStale =
+          requestId !== latestSprintsRequestId ||
+          get().selectedProjectId !== projectId;
+
+        if (requestIsStale) {
+          return false;
+        }
+
+        set({
+          sprints: [],
+          selectedSprintId: null,
+          sprintsErrorMessage:
+            'Could not load sprints. Please try again.',
+        });
+
+        return false;
+      } finally {
+        if (requestId === latestSprintsRequestId) {
+          set({
+            isSprintsLoading: false,
+          });
+        }
       }
     },
   }));

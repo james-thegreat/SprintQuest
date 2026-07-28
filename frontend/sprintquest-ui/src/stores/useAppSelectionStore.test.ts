@@ -2,9 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getProjects } from '../api/projectsApi';
 import type { Project } from '../types/project';
 import { useAppSelectionStore } from './useAppSelectionStore';
+import { getSprintsByProjectId } from '../api/sprintsApi';
+import type { Sprint } from '../types/sprint';
+
 
 vi.mock('../api/projectsApi', () => ({
   getProjects: vi.fn(),
+}));
+
+vi.mock('../api/sprintsApi', () => ({
+  getSprintsByProjectId: vi.fn(),
 }));
 
 const firstProject: Project = {
@@ -19,6 +26,33 @@ const secondProject: Project = {
   name: 'Portfolio',
   description: null,
   createdAt: '2026-07-29T01:00:00Z',
+};
+
+const firstSprint: Sprint = {
+  id: 'sprint-1',
+  projectId: firstProject.id,
+  name: 'M13 App Selection Foundation',
+  startDate: '2026-07-29T00:00:00Z',
+  endDate: '2026-08-05T00:00:00Z',
+  createdAt: '2026-07-29T00:00:00Z',
+};
+
+const secondSprint: Sprint = {
+  id: 'sprint-2',
+  projectId: firstProject.id,
+  name: 'M14 Dashboard Integration',
+  startDate: '2026-08-06T00:00:00Z',
+  endDate: '2026-08-13T00:00:00Z',
+  createdAt: '2026-07-29T01:00:00Z',
+};
+
+const otherProjectSprint: Sprint = {
+  id: 'sprint-3',
+  projectId: secondProject.id,
+  name: 'Portfolio Sprint',
+  startDate: '2026-08-01T00:00:00Z',
+  endDate: '2026-08-08T00:00:00Z',
+  createdAt: '2026-07-29T02:00:00Z',
 };
 
 describe('useAppSelectionStore project loading', () => {
@@ -166,4 +200,171 @@ describe('useAppSelectionStore project loading', () => {
             useAppSelectionStore.getState().selectedProjectId,
         ).toBe(firstProject.id);
         });
+});
+
+describe('useAppSelectionStore sprint loading', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    useAppSelectionStore.setState({
+      projects: [firstProject],
+      selectedProjectId: firstProject.id,
+      sprints: [],
+      selectedSprintId: null,
+      isProjectsLoading: false,
+      isSprintsLoading: false,
+      projectsErrorMessage: null,
+      sprintsErrorMessage: null,
+      hasInitialised: false,
+    });
+  });
+
+  it('loads project sprints and selects the first sprint', async () => {
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([
+      firstSprint,
+      secondSprint,
+    ]);
+
+    const result = await useAppSelectionStore
+      .getState()
+      .loadSprints(firstProject.id);
+
+    expect(result).toBe(true);
+    expect(getSprintsByProjectId).toHaveBeenCalledWith(
+      firstProject.id,
+    );
+    expect(useAppSelectionStore.getState().sprints).toEqual([
+      firstSprint,
+      secondSprint,
+    ]);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBe(firstSprint.id);
+    expect(
+      useAppSelectionStore.getState().sprintsErrorMessage,
+    ).toBeNull();
+    expect(
+      useAppSelectionStore.getState().isSprintsLoading,
+    ).toBe(false);
+  });
+
+  it('represents a project with no sprints', async () => {
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([]);
+
+    const result = await useAppSelectionStore
+      .getState()
+      .loadSprints(firstProject.id);
+
+    expect(result).toBe(true);
+    expect(useAppSelectionStore.getState().sprints).toEqual([]);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBeNull();
+    expect(
+      useAppSelectionStore.getState().isSprintsLoading,
+    ).toBe(false);
+  });
+
+
+
+  it('clears sprint state and reports a sprint API failure', async () => {
+        useAppSelectionStore.setState({
+        sprints: [firstSprint],
+        selectedSprintId: firstSprint.id,
+        });
+
+        vi.mocked(getSprintsByProjectId).mockRejectedValue(
+        new Error('Sprint request failed'),
+        );
+
+        const result = await useAppSelectionStore
+        .getState()
+        .loadSprints(firstProject.id);
+
+        expect(result).toBe(false);
+        expect(useAppSelectionStore.getState().sprints).toEqual([]);
+        expect(
+        useAppSelectionStore.getState().selectedSprintId,
+        ).toBeNull();
+        expect(
+        useAppSelectionStore.getState().sprintsErrorMessage,
+        ).toBe('Could not load sprints. Please try again.');
+        expect(
+        useAppSelectionStore.getState().isSprintsLoading,
+        ).toBe(false);
+    });
+
+    it('keeps the current sprint when it still belongs to the project', async () => {
+        useAppSelectionStore.setState({
+            selectedSprintId: secondSprint.id,
+        });
+
+        vi.mocked(getSprintsByProjectId).mockResolvedValue([
+            firstSprint,
+            secondSprint,
+        ]);
+
+        const result = await useAppSelectionStore
+            .getState()
+            .loadSprints(firstProject.id);
+
+        expect(result).toBe(true);
+        expect(
+            useAppSelectionStore.getState().selectedSprintId,
+        ).toBe(secondSprint.id);
+    });
+
+    it('falls back to the first sprint when the current selection is invalid', async () => {
+        useAppSelectionStore.setState({
+            selectedSprintId: 'missing-sprint',
+        });
+
+        vi.mocked(getSprintsByProjectId).mockResolvedValue([
+            firstSprint,
+            secondSprint,
+        ]);
+
+        const result = await useAppSelectionStore
+            .getState()
+            .loadSprints(firstProject.id);
+
+        expect(result).toBe(true);
+        expect(
+            useAppSelectionStore.getState().selectedSprintId,
+        ).toBe(firstSprint.id);
+    });
+
+    it('ignores a stale sprint response after the selected project changes', async () => {
+        let resolveRequest!: (sprints: Sprint[]) => void;
+
+        const pendingRequest = new Promise<Sprint[]>((resolve) => {
+            resolveRequest = resolve;
+        });
+
+        vi.mocked(getSprintsByProjectId).mockReturnValue(
+            pendingRequest,
+        );
+
+        const requestPromise = useAppSelectionStore
+            .getState()
+            .loadSprints(firstProject.id);
+
+        useAppSelectionStore.setState({
+            selectedProjectId: secondProject.id,
+            sprints: [otherProjectSprint],
+            selectedSprintId: otherProjectSprint.id,
+        });
+
+        resolveRequest([firstSprint, secondSprint]);
+
+        await requestPromise;
+
+        expect(useAppSelectionStore.getState().sprints).toEqual([
+            otherProjectSprint,
+        ]);
+        expect(
+            useAppSelectionStore.getState().selectedSprintId,
+        ).toBe(otherProjectSprint.id);
+    });
+
 });
