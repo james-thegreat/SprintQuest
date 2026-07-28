@@ -4,6 +4,12 @@ import { getSprintsByProjectId } from '../api/sprintsApi';
 import type { Project } from '../types/project';
 import type { Sprint } from '../types/sprint';
 
+const PROJECT_STORAGE_KEY =
+  'sprintquest.selectedProjectId';
+
+const SPRINT_STORAGE_KEY =
+  'sprintquest.selectedSprintId';
+
 let latestSprintsRequestId = 0;
 
 type AppSelectionStore = {
@@ -166,6 +172,9 @@ export const useAppSelectionStore =
 
         latestSprintsRequestId += 1;
 
+        localStorage.setItem(PROJECT_STORAGE_KEY, projectId);
+        localStorage.removeItem(SPRINT_STORAGE_KEY);
+
         set({
             selectedProjectId: projectId,
             sprints: [],
@@ -185,6 +194,8 @@ export const useAppSelectionStore =
         if (!sprintExists) {
             return false;
         }
+
+        localStorage.setItem(SPRINT_STORAGE_KEY, sprintId);
 
         set({
             selectedSprintId: sprintId,

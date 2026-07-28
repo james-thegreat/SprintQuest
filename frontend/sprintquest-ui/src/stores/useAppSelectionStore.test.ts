@@ -513,6 +513,59 @@ describe('useAppSelectionStore sprint selection', () => {
       useAppSelectionStore.getState().selectedSprintId,
     ).toBe(firstSprint.id);
   });
-
-
 });
+
+describe('useAppSelectionStore selection persistence', () => {
+    const projectStorageKey =
+        'sprintquest.selectedProjectId';
+
+    const sprintStorageKey =
+        'sprintquest.selectedSprintId';
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        localStorage.clear();
+
+        useAppSelectionStore.setState({
+        projects: [firstProject, secondProject],
+        selectedProjectId: firstProject.id,
+        sprints: [firstSprint, secondSprint],
+        selectedSprintId: firstSprint.id,
+        isProjectsLoading: false,
+        isSprintsLoading: false,
+        projectsErrorMessage: null,
+        sprintsErrorMessage: null,
+        hasInitialised: false,
+        });
+    });
+
+    it('persists a selected project and clears the stored sprint', () => {
+        localStorage.setItem(
+        sprintStorageKey,
+        firstSprint.id,
+        );
+
+        const result = useAppSelectionStore
+        .getState()
+        .selectProject(secondProject.id);
+
+        expect(result).toBe(true);
+        expect(
+        localStorage.getItem(projectStorageKey),
+        ).toBe(secondProject.id);
+        expect(
+        localStorage.getItem(sprintStorageKey),
+        ).toBeNull();
+    });
+
+    it('persists a selected sprint', () => {
+        const result = useAppSelectionStore
+        .getState()
+        .selectSprint(secondSprint.id);
+
+        expect(result).toBe(true);
+        expect(
+        localStorage.getItem(sprintStorageKey),
+        ).toBe(secondSprint.id);
+    });
+    });
