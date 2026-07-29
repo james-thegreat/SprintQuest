@@ -669,4 +669,189 @@ describe('useAppSelectionStore selection persistence', () => {
         localStorage.getItem(sprintStorageKey),
         ).toBe(secondSprint.id);
     });
+
+
+});
+
+describe('useAppSelectionStore initialization', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+
+    useAppSelectionStore.setState({
+      projects: [],
+      selectedProjectId: null,
+      sprints: [],
+      selectedSprintId: null,
+      isProjectsLoading: false,
+      isSprintsLoading: false,
+      projectsErrorMessage: null,
+      sprintsErrorMessage: null,
+      hasInitialised: false,
     });
+  });
+
+  it('loads projects and then loads sprints for the selected project', async () => {
+    vi.mocked(getProjects).mockResolvedValue([
+      firstProject,
+      secondProject,
+    ]);
+
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([
+      firstSprint,
+      secondSprint,
+    ]);
+
+    const result = await useAppSelectionStore
+      .getState()
+      .initialise();
+
+    expect(result).toBe(true);
+    expect(getProjects).toHaveBeenCalledTimes(1);
+    expect(getSprintsByProjectId).toHaveBeenCalledWith(
+      firstProject.id,
+    );
+    expect(
+      useAppSelectionStore.getState().selectedProjectId,
+    ).toBe(firstProject.id);
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBe(firstSprint.id);
+    expect(
+      useAppSelectionStore.getState().hasInitialised,
+    ).toBe(true);
+  });
+
+  it('does not load sprints when no project exists', async () => {
+    vi.mocked(getProjects).mockResolvedValue([]);
+
+    const result = await useAppSelectionStore
+      .getState()
+      .initialise();
+
+    expect(result).toBe(true);
+    expect(getProjects).toHaveBeenCalledTimes(1);
+    expect(getSprintsByProjectId).not.toHaveBeenCalled();
+    expect(
+      useAppSelectionStore.getState().selectedProjectId,
+    ).toBeNull();
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBeNull();
+    expect(
+      useAppSelectionStore.getState().hasInitialised,
+    ).toBe(true);
+  });
+
+  it('does not reload data after initialization has completed', async () => {
+    vi.mocked(getProjects).mockResolvedValue([
+        firstProject,
+        secondProject,
+    ]);
+
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([
+        firstSprint,
+        secondSprint,
+    ]);
+
+    const firstResult = await useAppSelectionStore
+        .getState()
+        .initialise();
+
+    const secondResult = await useAppSelectionStore
+        .getState()
+        .initialise();
+
+    expect(firstResult).toBe(true);
+    expect(secondResult).toBe(true);
+    expect(getProjects).toHaveBeenCalledTimes(1);
+    expect(getSprintsByProjectId).toHaveBeenCalledTimes(1);
+    expect(
+        useAppSelectionStore.getState().hasInitialised,
+    ).toBe(true);
+    });
+
+    it('shares one initialization request when called concurrently', async () => {
+        let resolveProjects!: (projects: Project[]) => void;
+
+        const projectsRequest = new Promise<Project[]>((resolve) => {
+            resolveProjects = resolve;
+        });
+
+        vi.mocked(getProjects).mockReturnValue(projectsRequest);
+
+        vi.mocked(getSprintsByProjectId).mockResolvedValue([
+            firstSprint,
+            secondSprint,
+        ]);
+
+        const firstRequest = useAppSelectionStore
+            .getState()
+            .initialise();
+
+        const secondRequest = useAppSelectionStore
+            .getState()
+            .initialise();
+
+        expect(getProjects).toHaveBeenCalledTimes(1);
+
+        resolveProjects([firstProject, secondProject]);
+
+        const [firstResult, secondResult] = await Promise.all([
+            firstRequest,
+            secondRequest,
+        ]);
+
+        expect(firstResult).toBe(true);
+        expect(secondResult).toBe(true);
+        expect(getProjects).toHaveBeenCalledTimes(1);
+        expect(getSprintsByProjectId).toHaveBeenCalledTimes(1);
+        expect(
+            useAppSelectionStore.getState().hasInitialised,
+        ).toBe(true);
+    });
+
+    it('can retry initialization after the project request fails', async () => {
+        vi.mocked(getProjects)
+            .mockRejectedValueOnce(
+            new Error('Project request failed'),
+            )
+            .mockResolvedValueOnce([
+            firstProject,
+            secondProject,
+            ]);
+
+        vi.mocked(getSprintsByProjectId).mockResolvedValue([
+            firstSprint,
+            secondSprint,
+        ]);
+
+        const failedResult = await useAppSelectionStore
+            .getState()
+            .initialise();
+
+        expect(failedResult).toBe(false);
+        expect(
+            useAppSelectionStore.getState().hasInitialised,
+        ).toBe(false);
+        expect(getProjects).toHaveBeenCalledTimes(1);
+
+        const retryResult = await useAppSelectionStore
+            .getState()
+            .initialise();
+
+        expect(retryResult).toBe(true);
+        expect(getProjects).toHaveBeenCalledTimes(2);
+        expect(getSprintsByProjectId).toHaveBeenCalledTimes(1);
+        expect(
+            useAppSelectionStore.getState().selectedProjectId,
+        ).toBe(firstProject.id);
+        expect(
+            useAppSelectionStore.getState().selectedSprintId,
+        ).toBe(firstSprint.id);
+        expect(
+            useAppSelectionStore.getState().hasInitialised,
+        ).toBe(true);
+    });
+
+});

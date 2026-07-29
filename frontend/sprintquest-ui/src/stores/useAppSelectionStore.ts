@@ -11,6 +11,7 @@ const SPRINT_STORAGE_KEY =
   'sprintquest.selectedSprintId';
 
 let latestSprintsRequestId = 0;
+let initialisePromise: Promise<boolean> | null = null;
 
 type AppSelectionStore = {
   projects: Project[];
@@ -31,6 +32,7 @@ type AppSelectionStore = {
   loadSprints: (projectId: string) => Promise<boolean>;
   selectProject: (projectId: string) => boolean;
   selectSprint: (sprintId: string) => boolean;
+  initialise: () => Promise<boolean>;
 };
 
 export const useAppSelectionStore =
@@ -48,6 +50,50 @@ export const useAppSelectionStore =
     sprintsErrorMessage: null,
 
     hasInitialised: false,
+
+    initialise: async () => {
+        if (get().hasInitialised) {
+            return true;
+        }
+
+        if (initialisePromise) {
+            return initialisePromise;
+        }
+
+        initialisePromise = (async () => {
+            const projectsLoaded = await get().loadProjects();
+
+            if (!projectsLoaded) {
+            return false;
+            }
+
+            const selectedProjectId = get().selectedProjectId;
+
+            if (!selectedProjectId) {
+            set({
+                hasInitialised: true,
+            });
+
+            return true;
+            }
+
+            const sprintsLoaded = await get().loadSprints(
+            selectedProjectId,
+            );
+
+            set({
+            hasInitialised: true,
+            });
+
+            return sprintsLoaded;
+        })();
+
+        try {
+            return await initialisePromise;
+        } finally {
+            initialisePromise = null;
+        }
+    },
 
     loadProjects: async () => {
       set({
