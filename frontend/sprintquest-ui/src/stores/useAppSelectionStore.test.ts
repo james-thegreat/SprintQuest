@@ -417,7 +417,52 @@ describe('useAppSelectionStore sprint loading', () => {
         ).toBe(otherProjectSprint.id);
     });
 
+    it('restores a valid stored sprint selection', async () => {
+        localStorage.setItem(
+            'sprintquest.selectedSprintId',
+            secondSprint.id,
+        );
 
+        vi.mocked(getSprintsByProjectId).mockResolvedValue([
+            firstSprint,
+            secondSprint,
+        ]);
+
+        const result = await useAppSelectionStore
+            .getState()
+            .loadSprints(firstProject.id);
+
+        expect(result).toBe(true);
+        expect(
+            useAppSelectionStore.getState().selectedSprintId,
+        ).toBe(secondSprint.id);
+    });
+
+    it('replaces an invalid stored sprint with the first available sprint', async () => {
+        localStorage.setItem(
+            'sprintquest.selectedSprintId',
+            'missing-sprint',
+        );
+
+        vi.mocked(getSprintsByProjectId).mockResolvedValue([
+            firstSprint,
+            secondSprint,
+        ]);
+
+        const result = await useAppSelectionStore
+            .getState()
+            .loadSprints(firstProject.id);
+
+        expect(result).toBe(true);
+        expect(
+            useAppSelectionStore.getState().selectedSprintId,
+        ).toBe(firstSprint.id);
+        expect(
+            localStorage.getItem(
+            'sprintquest.selectedSprintId',
+            ),
+        ).toBe(firstSprint.id);
+    });
 
 
 

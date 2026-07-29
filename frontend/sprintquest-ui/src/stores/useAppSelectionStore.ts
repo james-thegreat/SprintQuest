@@ -145,13 +145,36 @@ export const useAppSelectionStore =
             }
 
             const previousSprintId = get().selectedSprintId;
+            const storedSprintId = localStorage.getItem(
+            SPRINT_STORAGE_KEY,
+            );
+
+            const validPreviousSprintId = sprints.some(
+            (sprint) => sprint.id === previousSprintId,
+            )
+            ? previousSprintId
+            : null;
+
+            const validStoredSprintId = sprints.some(
+            (sprint) => sprint.id === storedSprintId,
+            )
+            ? storedSprintId
+            : null;
 
             const selectedSprintId =
-            sprints.some(
-                (sprint) => sprint.id === previousSprintId,
-            )
-                ? previousSprintId
-                : sprints[0]?.id ?? null;
+            validPreviousSprintId ??
+            validStoredSprintId ??
+            sprints[0]?.id ??
+            null;
+
+            if (selectedSprintId) {
+            localStorage.setItem(
+                SPRINT_STORAGE_KEY,
+                selectedSprintId,
+            );
+            } else {
+            localStorage.removeItem(SPRINT_STORAGE_KEY);
+            }
 
             set({
             sprints,
@@ -184,8 +207,7 @@ export const useAppSelectionStore =
             });
             }
         }
-    },
-
+        },
     selectProject: (projectId) => {
         const projectExists = get().projects.some(
             (project) => project.id === projectId,
