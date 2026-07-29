@@ -57,17 +57,42 @@ export const useAppSelectionStore =
 
       try {
         const projects = await getProjects();
+
         const previousProjectId = get().selectedProjectId;
+        const storedProjectId = localStorage.getItem(
+        PROJECT_STORAGE_KEY,
+        );
+
+        const validPreviousProjectId = projects.some(
+        (project) => project.id === previousProjectId,
+        )
+        ? previousProjectId
+        : null;
+
+        const validStoredProjectId = projects.some(
+        (project) => project.id === storedProjectId,
+        )
+        ? storedProjectId
+        : null;
 
         const selectedProjectId =
-          projects.some(
-            (project) => project.id === previousProjectId,
-          )
-            ? previousProjectId
-            : projects[0]?.id ?? null;
+        validPreviousProjectId ??
+        validStoredProjectId ??
+        projects[0]?.id ??
+        null;
 
         const projectChanged =
           selectedProjectId !== previousProjectId;
+
+        if (selectedProjectId) {
+            localStorage.setItem(
+                PROJECT_STORAGE_KEY,
+                selectedProjectId,
+            );
+        } else {
+            localStorage.removeItem(PROJECT_STORAGE_KEY);
+            localStorage.removeItem(SPRINT_STORAGE_KEY);
+        }
 
         set({
           projects,

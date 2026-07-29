@@ -58,6 +58,7 @@ const otherProjectSprint: Sprint = {
 describe('useAppSelectionStore project loading', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
 
     useAppSelectionStore.setState({
       projects: [],
@@ -200,11 +201,59 @@ describe('useAppSelectionStore project loading', () => {
             useAppSelectionStore.getState().selectedProjectId,
         ).toBe(firstProject.id);
         });
+
+  it('restores a valid stored project selection', async () => {
+        localStorage.setItem(
+            'sprintquest.selectedProjectId',
+            secondProject.id,
+        );
+
+        vi.mocked(getProjects).mockResolvedValue([
+            firstProject,
+            secondProject,
+        ]);
+
+        const result = await useAppSelectionStore
+            .getState()
+            .loadProjects();
+
+        expect(result).toBe(true);
+        expect(
+            useAppSelectionStore.getState().selectedProjectId,
+        ).toBe(secondProject.id);
+    });
+
+  it('replaces an invalid stored project with the first available project', async () => {
+        localStorage.setItem(
+            'sprintquest.selectedProjectId',
+            'missing-project',
+        );
+
+        vi.mocked(getProjects).mockResolvedValue([
+            firstProject,
+            secondProject,
+        ]);
+
+        const result = await useAppSelectionStore
+            .getState()
+            .loadProjects();
+
+        expect(result).toBe(true);
+        expect(
+            useAppSelectionStore.getState().selectedProjectId,
+        ).toBe(firstProject.id);
+        expect(
+            localStorage.getItem(
+            'sprintquest.selectedProjectId',
+            ),
+        ).toBe(firstProject.id);
+    });
 });
 
 describe('useAppSelectionStore sprint loading', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
 
     useAppSelectionStore.setState({
       projects: [firstProject],
@@ -217,6 +266,7 @@ describe('useAppSelectionStore sprint loading', () => {
       sprintsErrorMessage: null,
       hasInitialised: false,
     });
+
   });
 
   it('loads project sprints and selects the first sprint', async () => {
@@ -367,11 +417,16 @@ describe('useAppSelectionStore sprint loading', () => {
         ).toBe(otherProjectSprint.id);
     });
 
+
+
+
+
 });
 
 describe('useAppSelectionStore project selection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
 
     useAppSelectionStore.setState({
       projects: [firstProject, secondProject],
@@ -478,6 +533,7 @@ describe('useAppSelectionStore project selection', () => {
 describe('useAppSelectionStore sprint selection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
 
     useAppSelectionStore.setState({
       projects: [firstProject],
