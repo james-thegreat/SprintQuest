@@ -30,7 +30,7 @@ type AppSelectionStore = {
 
   loadProjects: () => Promise<boolean>;
   loadSprints: (projectId: string) => Promise<boolean>;
-  selectProject: (projectId: string) => boolean;
+  selectProject: (projectId: string) => Promise<boolean>;
   selectSprint: (sprintId: string) => boolean;
   initialise: () => Promise<boolean>;
 };
@@ -254,46 +254,46 @@ export const useAppSelectionStore =
             }
         }
         },
-    selectProject: (projectId) => {
-        const projectExists = get().projects.some(
-            (project) => project.id === projectId,
-        );
+    selectProject: async (projectId) => {
+      const projectExists = get().projects.some(
+        (project) => project.id === projectId,
+      );
 
-        if (!projectExists) {
-            return false;
-        }
+      if (!projectExists) {
+        return false;
+      }
 
-        latestSprintsRequestId += 1;
+      latestSprintsRequestId += 1;
 
-        localStorage.setItem(PROJECT_STORAGE_KEY, projectId);
-        localStorage.removeItem(SPRINT_STORAGE_KEY);
+      localStorage.setItem(PROJECT_STORAGE_KEY, projectId);
+      localStorage.removeItem(SPRINT_STORAGE_KEY);
 
-        set({
-            selectedProjectId: projectId,
-            sprints: [],
-            selectedSprintId: null,
-            isSprintsLoading: false,
-            sprintsErrorMessage: null,
-        });
+      set({
+        selectedProjectId: projectId,
+        sprints: [],
+        selectedSprintId: null,
+        isSprintsLoading: false,
+        sprintsErrorMessage: null,
+      });
 
-        return true;
+      return get().loadSprints(projectId);
     },
 
     selectSprint: (sprintId) => {
-        const sprintExists = get().sprints.some(
-            (sprint) => sprint.id === sprintId,
-        );
+      const sprintExists = get().sprints.some(
+        (sprint) => sprint.id === sprintId,
+      );
 
-        if (!sprintExists) {
-            return false;
-        }
+      if (!sprintExists) {
+        return false;
+      }
 
-        localStorage.setItem(SPRINT_STORAGE_KEY, sprintId);
+      localStorage.setItem(SPRINT_STORAGE_KEY, sprintId);
 
-        set({
-            selectedSprintId: sprintId,
-        });
+      set({
+        selectedSprintId: sprintId,
+      });
 
-        return true;
+      return true;
     },
   }));

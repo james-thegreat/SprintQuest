@@ -472,6 +472,7 @@ describe('useAppSelectionStore project selection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    vi.mocked(getSprintsByProjectId).mockReset();
 
     useAppSelectionStore.setState({
       projects: [firstProject, secondProject],
@@ -486,19 +487,28 @@ describe('useAppSelectionStore project selection', () => {
     });
   });
 
-  it('selects a valid project and clears the previous sprint context', () => {
-    const result = useAppSelectionStore
+  it('selects a valid project and loads its sprint context', async () => {
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([
+      otherProjectSprint,
+    ]);
+
+    const result = await useAppSelectionStore
       .getState()
       .selectProject(secondProject.id);
 
     expect(result).toBe(true);
+    expect(getSprintsByProjectId).toHaveBeenCalledWith(
+      secondProject.id,
+    );
     expect(
       useAppSelectionStore.getState().selectedProjectId,
     ).toBe(secondProject.id);
-    expect(useAppSelectionStore.getState().sprints).toEqual([]);
+    expect(useAppSelectionStore.getState().sprints).toEqual([
+      otherProjectSprint,
+    ]);
     expect(
       useAppSelectionStore.getState().selectedSprintId,
-    ).toBeNull();
+    ).toBe(otherProjectSprint.id);
     expect(
       useAppSelectionStore.getState().sprintsErrorMessage,
     ).toBeNull();
@@ -507,12 +517,13 @@ describe('useAppSelectionStore project selection', () => {
     ).toBe(false);
   });
 
-  it('rejects a project that is not in the loaded project list', () => {
-    const result = useAppSelectionStore
+  it('rejects a project that is not in the loaded project list', async () => {
+    const result = await useAppSelectionStore
       .getState()
       .selectProject('missing-project');
 
     expect(result).toBe(false);
+    expect(getSprintsByProjectId).not.toHaveBeenCalled();
     expect(
       useAppSelectionStore.getState().selectedProjectId,
     ).toBe(firstProject.id);
@@ -526,17 +537,17 @@ describe('useAppSelectionStore project selection', () => {
   });
 
   it('invalidates an in-flight sprint request when selecting another project', async () => {
-    let resolveRequest!: (sprints: Sprint[]) => void;
+    let resolveFirstRequest!: (sprints: Sprint[]) => void;
 
-    const pendingRequest = new Promise<Sprint[]>((resolve) => {
-      resolveRequest = resolve;
+    const firstRequest = new Promise<Sprint[]>((resolve) => {
+      resolveFirstRequest = resolve;
     });
 
-    vi.mocked(getSprintsByProjectId).mockReturnValue(
-      pendingRequest,
-    );
+    vi.mocked(getSprintsByProjectId)
+      .mockReturnValueOnce(firstRequest)
+      .mockResolvedValueOnce([otherProjectSprint]);
 
-    const requestPromise = useAppSelectionStore
+    const firstRequestPromise = useAppSelectionStore
       .getState()
       .loadSprints(firstProject.id);
 
@@ -544,34 +555,46 @@ describe('useAppSelectionStore project selection', () => {
       useAppSelectionStore.getState().isSprintsLoading,
     ).toBe(true);
 
-    const selectionResult = useAppSelectionStore
+    const selectionResult = await useAppSelectionStore
       .getState()
       .selectProject(secondProject.id);
 
     expect(selectionResult).toBe(true);
+    expect(getSprintsByProjectId).toHaveBeenNthCalledWith(
+      1,
+      firstProject.id,
+    );
+    expect(getSprintsByProjectId).toHaveBeenNthCalledWith(
+      2,
+      secondProject.id,
+    );
     expect(
       useAppSelectionStore.getState().selectedProjectId,
     ).toBe(secondProject.id);
-    expect(useAppSelectionStore.getState().sprints).toEqual([]);
+    expect(useAppSelectionStore.getState().sprints).toEqual([
+      otherProjectSprint,
+    ]);
     expect(
       useAppSelectionStore.getState().selectedSprintId,
-    ).toBeNull();
+    ).toBe(otherProjectSprint.id);
     expect(
       useAppSelectionStore.getState().isSprintsLoading,
     ).toBe(false);
 
-    resolveRequest([firstSprint, secondSprint]);
+    resolveFirstRequest([firstSprint, secondSprint]);
 
-    const requestResult = await requestPromise;
+    const firstRequestResult = await firstRequestPromise;
 
-    expect(requestResult).toBe(false);
+    expect(firstRequestResult).toBe(false);
     expect(
       useAppSelectionStore.getState().selectedProjectId,
     ).toBe(secondProject.id);
-    expect(useAppSelectionStore.getState().sprints).toEqual([]);
+    expect(useAppSelectionStore.getState().sprints).toEqual([
+      otherProjectSprint,
+    ]);
     expect(
       useAppSelectionStore.getState().selectedSprintId,
-    ).toBeNull();
+    ).toBe(otherProjectSprint.id);
   });
 });
 
@@ -617,60 +640,63 @@ describe('useAppSelectionStore sprint selection', () => {
 });
 
 describe('useAppSelectionStore selection persistence', () => {
-    const projectStorageKey =
-        'sprintquest.selectedProjectId';
+  const projectStorageKey =
+    'sprintquest.selectedProjectId';
 
-    const sprintStorageKey =
-        'sprintquest.selectedSprintId';
+  const sprintStorageKey =
+    'sprintquest.selectedSprintId';
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        localStorage.clear();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(getSprintsByProjectId).mockReset();
 
-        useAppSelectionStore.setState({
-        projects: [firstProject, secondProject],
-        selectedProjectId: firstProject.id,
-        sprints: [firstSprint, secondSprint],
-        selectedSprintId: firstSprint.id,
-        isProjectsLoading: false,
-        isSprintsLoading: false,
-        projectsErrorMessage: null,
-        sprintsErrorMessage: null,
-        hasInitialised: false,
-        });
+    useAppSelectionStore.setState({
+      projects: [firstProject, secondProject],
+      selectedProjectId: firstProject.id,
+      sprints: [firstSprint, secondSprint],
+      selectedSprintId: firstSprint.id,
+      isProjectsLoading: false,
+      isSprintsLoading: false,
+      projectsErrorMessage: null,
+      sprintsErrorMessage: null,
+      hasInitialised: false,
     });
+  });
 
-    it('persists a selected project and clears the stored sprint', () => {
-        localStorage.setItem(
-        sprintStorageKey,
-        firstSprint.id,
-        );
+  it('persists the selected project and its loaded sprint', async () => {
+    localStorage.setItem(
+      sprintStorageKey,
+      firstSprint.id,
+    );
 
-        const result = useAppSelectionStore
-        .getState()
-        .selectProject(secondProject.id);
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([
+      otherProjectSprint,
+    ]);
 
-        expect(result).toBe(true);
-        expect(
-        localStorage.getItem(projectStorageKey),
-        ).toBe(secondProject.id);
-        expect(
-        localStorage.getItem(sprintStorageKey),
-        ).toBeNull();
-    });
+    const result = await useAppSelectionStore
+      .getState()
+      .selectProject(secondProject.id);
 
-    it('persists a selected sprint', () => {
-        const result = useAppSelectionStore
-        .getState()
-        .selectSprint(secondSprint.id);
+    expect(result).toBe(true);
+    expect(
+      localStorage.getItem(projectStorageKey),
+    ).toBe(secondProject.id);
+    expect(
+      localStorage.getItem(sprintStorageKey),
+    ).toBe(otherProjectSprint.id);
+  });
 
-        expect(result).toBe(true);
-        expect(
-        localStorage.getItem(sprintStorageKey),
-        ).toBe(secondSprint.id);
-    });
+  it('persists a selected sprint', () => {
+    const result = useAppSelectionStore
+      .getState()
+      .selectSprint(secondSprint.id);
 
-
+    expect(result).toBe(true);
+    expect(
+      localStorage.getItem(sprintStorageKey),
+    ).toBe(secondSprint.id);
+  });
 });
 
 describe('useAppSelectionStore initialization', () => {
