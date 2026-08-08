@@ -288,4 +288,278 @@ describe('AppLayout application context', () => {
     ).toBe(alternateSprint.id);
   });
 
+  it('shows a loading state while projects are loading', async () => {
+    let resolveProjects!: (projects: Project[]) => void;
+
+    const projectsRequest = new Promise<Project[]>(
+      (resolve) => {
+        resolveProjects = resolve;
+      },
+    );
+
+    vi.mocked(getProjects).mockReturnValue(
+      projectsRequest,
+    );
+
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([
+      sprint,
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route
+              index
+              element={<div>Dashboard content</div>}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const projectSelector =
+      screen.getByLabelText('Project');
+
+    expect(projectSelector).toBeDisabled();
+
+    expect(
+      screen.getByRole('option', {
+        name: 'Loading projects...',
+      }),
+    ).toBeInTheDocument();
+
+    resolveProjects([project]);
+
+    await waitFor(() => {
+      expect(
+        useAppSelectionStore.getState().hasInitialised,
+      ).toBe(true);
+    });
+  });
+
+  it('shows a loading state while sprints are loading', async () => {
+    let resolveSprints!: (sprints: Sprint[]) => void;
+
+    const sprintsRequest = new Promise<Sprint[]>(
+      (resolve) => {
+        resolveSprints = resolve;
+      },
+    );
+
+    vi.mocked(getProjects).mockResolvedValue([project]);
+
+    vi.mocked(getSprintsByProjectId).mockReturnValue(
+      sprintsRequest,
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route
+              index
+              element={<div>Dashboard content</div>}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        useAppSelectionStore.getState().selectedProjectId,
+      ).toBe(project.id);
+    });
+
+    const sprintSelector =
+      screen.getByLabelText('Sprint');
+
+    expect(sprintSelector).toBeDisabled();
+
+    expect(
+      screen.getByRole('option', {
+        name: 'Loading sprints...',
+      }),
+    ).toBeInTheDocument();
+
+    resolveSprints([sprint]);
+
+    await waitFor(() => {
+      expect(
+        useAppSelectionStore.getState().hasInitialised,
+      ).toBe(true);
+    });
+  });
+
+  it('shows an error when projects fail to load', async () => {
+    vi.mocked(getProjects).mockRejectedValue(
+      new Error('Network error'),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route
+              index
+              element={<div>Dashboard content</div>}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        useAppSelectionStore.getState()
+          .projectsErrorMessage,
+      ).toBe(
+        'Could not load projects. Please try again.',
+      );
+    });
+
+    expect(
+      screen.getByText(
+        'Could not load projects. Please try again.',
+      ),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByLabelText('Project'),
+    ).toBeDisabled();
+  });
+
+  it('shows an error when sprints fail to load', async () => {
+    vi.mocked(getProjects).mockResolvedValue([project]);
+
+    vi.mocked(getSprintsByProjectId).mockRejectedValue(
+      new Error('Network error'),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route
+              index
+              element={<div>Dashboard content</div>}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        useAppSelectionStore.getState()
+          .sprintsErrorMessage,
+      ).toBe(
+        'Could not load sprints. Please try again.',
+      );
+    });
+
+    expect(
+      screen.getByText(
+        'Could not load sprints. Please try again.',
+      ),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByLabelText('Sprint'),
+    ).toBeDisabled();
+  });
+
+  it('shows an empty state when no projects exist', async () => {
+    vi.mocked(getProjects).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route
+              index
+              element={<div>Dashboard content</div>}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        useAppSelectionStore.getState().hasInitialised,
+      ).toBe(true);
+    });
+
+    expect(
+      screen.getByRole('option', {
+        name: 'No projects available',
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByLabelText('Project'),
+    ).toBeDisabled();
+
+    expect(
+      useAppSelectionStore.getState().selectedProjectId,
+    ).toBeNull();
+
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBeNull();
+
+    expect(
+      getSprintsByProjectId,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('shows an empty state when the selected project has no sprints', async () => {
+    vi.mocked(getProjects).mockResolvedValue([project]);
+
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route
+              index
+              element={<div>Dashboard content</div>}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        useAppSelectionStore.getState().hasInitialised,
+      ).toBe(true);
+    });
+
+    expect(
+      screen.getByRole('option', {
+        name: 'No sprints available',
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByLabelText('Sprint'),
+    ).toBeDisabled();
+
+    expect(
+      useAppSelectionStore.getState().selectedProjectId,
+    ).toBe(project.id);
+
+    expect(
+      useAppSelectionStore.getState().selectedSprintId,
+    ).toBeNull();
+
+    expect(getSprintsByProjectId).toHaveBeenCalledWith(
+      project.id,
+    );
+  });
+
 });

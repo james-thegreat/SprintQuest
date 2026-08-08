@@ -49,6 +49,14 @@ export function AppLayout() {
     (state) => state.isSprintsLoading,
   );
 
+  const projectsErrorMessage = useAppSelectionStore(
+    (state) => state.projectsErrorMessage,
+  );
+
+  const sprintsErrorMessage = useAppSelectionStore(
+    (state) => state.sprintsErrorMessage,
+  );
+
   useEffect(() => {
     void initialise();
   }, [initialise]);
@@ -74,7 +82,12 @@ export function AppLayout() {
                 void selectProject(event.target.value);
               }}
             >
-              {projects.length === 0 ? (
+
+              {isProjectsLoading ? (
+                <option value="">
+                  Loading projects...
+                </option>
+              ) : projects.length === 0 ? (
                 <option value="">
                   No projects available
                 </option>
@@ -89,6 +102,12 @@ export function AppLayout() {
                 ))
               )}
             </select>
+
+            {projectsErrorMessage && (
+                <p role="alert">
+                  {projectsErrorMessage}
+                </p>
+              )}
           </div>
 
           <div>
@@ -106,7 +125,11 @@ export function AppLayout() {
                 selectSprint(event.target.value);
               }}
             >
-              {sprints.length === 0 ? (
+              {isSprintsLoading ? (
+                <option value="">
+                  Loading sprints...
+                </option>
+              ) : sprints.length === 0 ? (
                 <option value="">
                   No sprints available
                 </option>
@@ -121,6 +144,12 @@ export function AppLayout() {
                 ))
               )}
             </select>
+
+            {sprintsErrorMessage && (
+              <p role="alert">
+                {sprintsErrorMessage}
+              </p>
+            )}
           </div>
         </div>
 
