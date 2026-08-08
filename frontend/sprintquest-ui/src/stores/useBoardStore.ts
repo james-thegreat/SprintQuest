@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import {
   createTask as createTaskRequest,
   deleteTask as deleteTaskRequest,
-  getTasks,
+  getTasksBySprintId,
   updateTask,
 } from '../api/tasksApi';
 import type {
@@ -64,7 +64,7 @@ type BoardStore = {
   isCreating: boolean;
   errorMessage: string | null;
 
-  loadTasks: () => Promise<void>;
+  loadTasks: (sprintId: string) => Promise<void>;
   createTask: (request: CreateTaskRequest) => Promise<boolean>;
   updateTaskStatus: (
       task: SprintTask,
@@ -85,14 +85,16 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   errorMessage: null,
   isCreating: false,
 
-  loadTasks: async () => {
+  loadTasks: async (sprintId) => {
     set({
       isLoading: true,
       errorMessage: null,
     });
 
     try {
-      const apiTasks = await getTasks();
+      const apiTasks = await getTasksBySprintId(
+        sprintId,
+      );
 
       set({
         tasks: apiTasks,

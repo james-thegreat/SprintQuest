@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { deleteTask, updateTask } from '../api/tasksApi'
+import {
+  deleteTask,
+  getTasksBySprintId,
+  updateTask,
+} from '../api/tasksApi'
 import type { SprintTask } from '../types/task'
 import { useBoardStore } from './useBoardStore'
 
 vi.mock('../api/tasksApi', () => ({
   getTasks: vi.fn(),
+  getTasksBySprintId: vi.fn(),
   createTask: vi.fn(),
   updateTask: vi.fn(),
   deleteTask: vi.fn(),
@@ -242,6 +247,32 @@ describe('useBoardStore', () => {
       expect(useBoardStore.getState().errorMessage).toBe(
         'Could not delete the task. Please try again.',
       )
+    })
+  })
+
+  describe('loadTasks', () => {
+    it('loads tasks for the selected sprint', async () => {
+      vi.mocked(getTasksBySprintId).mockResolvedValue([
+        backlogTask,
+        secondTask,
+      ])
+
+      await useBoardStore
+        .getState()
+        .loadTasks('sprint-1')
+
+      expect(getTasksBySprintId).toHaveBeenCalledWith(
+        'sprint-1',
+      )
+
+      expect(useBoardStore.getState().tasks).toEqual([
+        backlogTask,
+        secondTask,
+      ])
+
+      expect(
+        useBoardStore.getState().errorMessage,
+      ).toBeNull()
     })
   })
 

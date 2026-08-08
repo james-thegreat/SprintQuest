@@ -11,8 +11,7 @@ import {
 } from '../types/task';
 import { useGamificationStore } from '../stores/useGamificationStore';
 import { subscribeToBoardHub } from '../realtime/boardHubConnection';
-
-const defaultSprintId = import.meta.env.VITE_DEFAULT_SPRINT_ID;
+import { useAppSelectionStore } from '../stores/useAppSelectionStore';
 
 export function BoardPage() {
 
@@ -52,6 +51,10 @@ export function BoardPage() {
       (state) => state.loadSummary,
     );
 
+    const selectedSprintId = useAppSelectionStore(
+      (state) => state.selectedSprintId,
+    );
+
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
     const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>(1);
@@ -60,8 +63,12 @@ export function BoardPage() {
 
 
     useEffect(() => {
-      void loadTasks();
-    }, [loadTasks]);
+      if (!selectedSprintId) {
+        return;
+      }
+
+      void loadTasks(selectedSprintId);
+    }, [loadTasks, selectedSprintId]);
 
     useEffect(() => {
       void loadGamificationSummary();
@@ -102,15 +109,15 @@ export function BoardPage() {
         return;
       }
 
-      if (!defaultSprintId) {
+      if (!selectedSprintId) {
         setErrorMessage(
-          'The default sprint is not configured.',
+          'Select a sprint before creating a task.',
         );
         return;
       }
 
       const wasCreated = await createTaskInStore({
-        sprintId: defaultSprintId,
+        sprintId: selectedSprintId,
         title: trimmedTitle,
         description: newTaskDescription.trim() || null,
         priority: newTaskPriority,
