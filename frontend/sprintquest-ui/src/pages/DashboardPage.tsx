@@ -1,15 +1,40 @@
+import { useAppSelectionStore } from '../stores/useAppSelectionStore';
+
 export function DashboardPage() {
+  const isProjectsLoading = useAppSelectionStore(
+    (state) => state.isProjectsLoading,
+  );
+  const isSprintsLoading = useAppSelectionStore(
+    (state) => state.isSprintsLoading,
+  );
+
+  const isDashboardLoading =
+    isProjectsLoading || isSprintsLoading;
+
+  if (isDashboardLoading) {
+    return (
+      <section>
+        <p>SprintQuest</p>
+        <h1>Dashboard</h1>
+
+        <div
+          role="status"
+          aria-label="Loading dashboard"
+        >
+          Loading dashboard...
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section>
-      <div className="page-header">
-        <div>
-          <p className="eyebrow">SprintQuest</p>
-          <h1>Dashboard</h1>
-          <p className="page-description">
-            Track your projects, sprint progress, and XP rewards in one place.
-          </p>
-        </div>
-      </div>
+      <p>SprintQuest</p>
+      <h1>Dashboard</h1>
+
+      <p>
+        Track your projects, sprint progress, and XP rewards in one place.
+      </p>
 
       <div className="dashboard-grid">
         <article className="stat-card">
