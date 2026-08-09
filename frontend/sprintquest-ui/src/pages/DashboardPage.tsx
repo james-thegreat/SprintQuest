@@ -50,6 +50,12 @@ export function DashboardPage() {
   const loadTasks = useBoardStore(
     (state) => state.loadTasks,
   );
+  const isTasksLoading = useBoardStore(
+    (state) => state.isLoading,
+  );
+  const tasksErrorMessage = useBoardStore(
+    (state) => state.errorMessage,
+  );
 
   const gamificationSummary = useGamificationStore(
     (state) => state.summary,
@@ -57,9 +63,16 @@ export function DashboardPage() {
   const loadGamificationSummary = useGamificationStore(
     (state) => state.loadSummary,
   );
+  const isGamificationLoading = useGamificationStore(
+    (state) => state.isLoading,
+  );
 
   const isDashboardLoading =
     isProjectsLoading || isSprintsLoading;
+
+  const isDashboardMetricsLoading =
+    (Boolean(selectedSprintId) && isTasksLoading) ||
+    isGamificationLoading;
 
   const selectedSprint = sprints.find(
     (sprint) => sprint.id === selectedSprintId,
@@ -99,6 +112,7 @@ export function DashboardPage() {
         );
 
   const totalXp = gamificationSummary?.totalXp ?? 0;
+
   const unlockedAchievements =
     gamificationSummary?.unlockedAchievements ?? [];
 
@@ -163,6 +177,35 @@ export function DashboardPage() {
     );
   }
 
+  if (tasksErrorMessage) {
+    return (
+      <section>
+        <p>SprintQuest</p>
+        <h1>Dashboard</h1>
+
+        <div role="alert">
+          <p>{tasksErrorMessage}</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (isDashboardMetricsLoading) {
+    return (
+      <section>
+        <p>SprintQuest</p>
+        <h1>Dashboard</h1>
+
+        <div
+          role="status"
+          aria-label="Loading dashboard metrics"
+        >
+          Loading dashboard metrics...
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section>
       <p>SprintQuest</p>
@@ -178,6 +221,7 @@ export function DashboardPage() {
           <span className="stat-label">
             Active Projects
           </span>
+
           <strong>{projects.length}</strong>
           <p>Projects currently available.</p>
         </article>
@@ -190,6 +234,7 @@ export function DashboardPage() {
           {selectedSprint ? (
             <>
               <strong>{selectedSprint.name}</strong>
+
               <p>
                 {formatDashboardDate(
                   selectedSprint.startDate,
@@ -210,6 +255,7 @@ export function DashboardPage() {
           <span className="stat-label">
             Completed Tasks
           </span>
+
           <strong>{completedTaskCount}</strong>
           <p>Tasks completed in the selected sprint.</p>
         </article>
@@ -218,6 +264,7 @@ export function DashboardPage() {
           <span className="stat-label">
             Remaining Tasks
           </span>
+
           <strong>{remainingTaskCount}</strong>
           <p>Tasks still requiring completion.</p>
         </article>
@@ -226,12 +273,16 @@ export function DashboardPage() {
           <span className="stat-label">
             Sprint Completion
           </span>
+
           <strong>{completionPercentage}%</strong>
           <p>Progress across the selected sprint.</p>
         </article>
 
         <article className="stat-card">
-          <span className="stat-label">XP Earned</span>
+          <span className="stat-label">
+            XP Earned
+          </span>
+
           <strong>{totalXp} XP</strong>
           <p>XP earned by completing tasks.</p>
         </article>
@@ -240,6 +291,7 @@ export function DashboardPage() {
           <span className="stat-label">
             Achievements
           </span>
+
           <strong>
             {unlockedAchievements.length} unlocked
           </strong>
