@@ -11,6 +11,25 @@ export function DashboardPage() {
   const isDashboardLoading =
     isProjectsLoading || isSprintsLoading;
 
+  const projectsErrorMessage = useAppSelectionStore(
+    (state) => state.projectsErrorMessage,
+  );
+
+  const sprintsErrorMessage = useAppSelectionStore(
+    (state) => state.sprintsErrorMessage,
+  );
+
+  const loadProjects = useAppSelectionStore(
+    (state) => state.loadProjects,
+  );
+
+  const selectedProjectId = useAppSelectionStore(
+    (state) => state.selectedProjectId,
+  );
+  const loadSprints = useAppSelectionStore(
+    (state) => state.loadSprints,
+  );
+
   if (isDashboardLoading) {
     return (
       <section>
@@ -22,6 +41,51 @@ export function DashboardPage() {
           aria-label="Loading dashboard"
         >
           Loading dashboard...
+        </div>
+      </section>
+    );
+  }
+
+  if (projectsErrorMessage) {
+    return (
+      <section>
+        <p>SprintQuest</p>
+        <h1>Dashboard</h1>
+
+        <div role="alert">
+          <p>{projectsErrorMessage}</p>
+
+          <button
+            type="button"
+            onClick={() => void loadProjects()}
+          >
+            Retry Projects
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (sprintsErrorMessage) {
+    return (
+      <section>
+        <p>SprintQuest</p>
+        <h1>Dashboard</h1>
+
+        <div role="alert">
+          <p>{sprintsErrorMessage}</p>
+
+          <button
+            type="button"
+            disabled={!selectedProjectId}
+            onClick={() => {
+              if (selectedProjectId) {
+                void loadSprints(selectedProjectId);
+              }
+            }}
+          >
+            Retry Sprints
+          </button>
         </div>
       </section>
     );
