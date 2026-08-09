@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { deleteTask, updateTask } from '../api/tasksApi'
+import {
+  deleteTask,
+  getTasksBySprintId,
+  updateTask,
+} from '../api/tasksApi'
 import type { SprintTask } from '../types/task'
 import { useBoardStore } from './useBoardStore'
 
 vi.mock('../api/tasksApi', () => ({
   getTasks: vi.fn(),
+  getTasksBySprintId: vi.fn(),
   createTask: vi.fn(),
   updateTask: vi.fn(),
   deleteTask: vi.fn(),
@@ -30,6 +35,17 @@ const secondTask: SprintTask = {
   priority: 1,
   storyPoints: 2,
   xpReward: 20,
+}
+
+const otherSprintTask: SprintTask = {
+  id: 'task-3',
+  sprintId: 'sprint-2',
+  title: 'Portfolio task',
+  description: 'Task for another sprint',
+  status: 0,
+  priority: 1,
+  storyPoints: 3,
+  xpReward: 30,
 }
 
 describe('useBoardStore', () => {
@@ -243,6 +259,94 @@ describe('useBoardStore', () => {
         'Could not delete the task. Please try again.',
       )
     })
+  })
+
+  describe('loadTasks', () => {
+    it('loads tasks for the selected sprint', async () => {
+      vi.mocked(getTasksBySprintId).mockResolvedValue([
+        backlogTask,
+        secondTask,
+      ])
+
+      await useBoardStore
+        .getState()
+        .loadTasks('sprint-1')
+
+      expect(getTasksBySprintId).toHaveBeenCalledWith(
+        'sprint-1',
+      )
+
+      expect(useBoardStore.getState().tasks).toEqual([
+        backlogTask,
+        secondTask,
+      ])
+
+      expect(
+        useBoardStore.getState().errorMessage,
+      ).toBeNull()
+    })
+
+    it('ignores a stale task response after another sprint loads', async () => {
+      let resolveFirstRequest!: (
+        tasks: SprintTask[],
+      ) => void
+
+      const firstRequest = new Promise<SprintTask[]>(
+        (resolve) => {
+          resolveFirstRequest = resolve
+        },
+      )
+
+      vi.mocked(getTasksBySprintId)
+        .mockReturnValueOnce(firstRequest)
+        .mockResolvedValueOnce([otherSprintTask])
+
+      const firstLoadPromise = useBoardStore
+        .getState()
+        .loadTasks('sprint-1')
+
+      await useBoardStore
+        .getState()
+        .loadTasks('sprint-2')
+
+      expect(useBoardStore.getState().tasks).toEqual([
+        otherSprintTask,
+      ])
+
+      resolveFirstRequest([
+        backlogTask,
+        secondTask,
+      ])
+
+      await firstLoadPromise
+
+      expect(useBoardStore.getState().tasks).toEqual([
+        otherSprintTask,
+      ])
+    })
+
+  })
+
+  it('clears tasks and reports an error when sprint tasks fail to load', async () => {
+    useBoardStore.setState({
+      tasks: [backlogTask, secondTask],
+    })
+
+    vi.mocked(getTasksBySprintId).mockRejectedValue(
+      new Error('Request failed'),
+    )
+
+    await useBoardStore
+      .getState()
+      .loadTasks('sprint-1')
+
+    expect(useBoardStore.getState().tasks).toEqual([])
+
+    expect(
+      useBoardStore.getState().errorMessage,
+    ).toBe(
+      'Could not load tasks for the selected sprint. Please try again.',
+    )
   })
 
 })

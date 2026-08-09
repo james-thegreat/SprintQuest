@@ -11,8 +11,7 @@ import {
 } from '../types/task';
 import { useGamificationStore } from '../stores/useGamificationStore';
 import { subscribeToBoardHub } from '../realtime/boardHubConnection';
-
-const defaultSprintId = import.meta.env.VITE_DEFAULT_SPRINT_ID;
+import { useAppSelectionStore } from '../stores/useAppSelectionStore';
 
 export function BoardPage() {
 
@@ -52,6 +51,36 @@ export function BoardPage() {
       (state) => state.loadSummary,
     );
 
+    const selectedSprintId = useAppSelectionStore(
+      (state) => state.selectedSprintId,
+    );
+
+    const selectedProjectId = useAppSelectionStore(
+      (state) => state.selectedProjectId,
+    );
+
+    const isProjectsLoading = useAppSelectionStore(
+      (state) => state.isProjectsLoading,
+    );
+
+    const isSprintsLoading = useAppSelectionStore(
+      (state) => state.isSprintsLoading,
+    );
+
+    const projectsErrorMessage = useAppSelectionStore(
+  (state) => state.projectsErrorMessage,
+);
+
+const sprintsErrorMessage = useAppSelectionStore(
+  (state) => state.sprintsErrorMessage,
+);
+
+const appSelectionErrorMessage =
+  projectsErrorMessage ?? sprintsErrorMessage;
+
+    const isAppSelectionLoading =
+      isProjectsLoading || isSprintsLoading;
+
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
     const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>(1);
@@ -60,8 +89,12 @@ export function BoardPage() {
 
 
     useEffect(() => {
-      void loadTasks();
-    }, [loadTasks]);
+      if (!selectedSprintId) {
+        return;
+      }
+
+      void loadTasks(selectedSprintId);
+    }, [loadTasks, selectedSprintId]);
 
     useEffect(() => {
       void loadGamificationSummary();
@@ -102,15 +135,15 @@ export function BoardPage() {
         return;
       }
 
-      if (!defaultSprintId) {
+      if (!selectedSprintId) {
         setErrorMessage(
-          'The default sprint is not configured.',
+          'Select a sprint before creating a task.',
         );
         return;
       }
 
       const wasCreated = await createTaskInStore({
-        sprintId: defaultSprintId,
+        sprintId: selectedSprintId,
         title: trimmedTitle,
         description: newTaskDescription.trim() || null,
         priority: newTaskPriority,
@@ -131,18 +164,34 @@ export function BoardPage() {
 
 
     
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter((task) => task.status === 4).length;
-    const remainingTasks = totalTasks - completedTasks;
+    const visibleTasks = selectedSprintId
+      ? tasks.filter(
+          (task) => task.sprintId === selectedSprintId,
+        )
+      : [];
+
+    const totalTasks = visibleTasks.length;
+
+    const completedTasks = visibleTasks.filter(
+      (task) => task.status === 4,
+    ).length;
+
+    const remainingTasks =
+      totalTasks - completedTasks;
 
     const sprintProgressPercentage =
-        totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+      totalTasks === 0
+        ? 0
+        : Math.round(
+            (completedTasks / totalTasks) * 100,
+          );
 
-
-
-    const completedSprintXp = tasks
-        .filter((task) => task.status === 4)
-        .reduce((total, task) => total + task.xpReward, 0);
+    const completedSprintXp = visibleTasks
+      .filter((task) => task.status === 4)
+      .reduce(
+        (total, task) => total + task.xpReward,
+        0,
+      );
 
   return (
     <section>
@@ -153,6 +202,39 @@ export function BoardPage() {
           Track sprint work across the board and build momentum as tasks move toward Done.
         </p>
       </header>
+
+      {isAppSelectionLoading && (
+  <p className="board-message">
+    Loading project and sprint selection...
+  </p>
+)}
+
+    {!isAppSelectionLoading &&
+      appSelectionErrorMessage && (
+        <p
+          className="board-message board-message-error"
+          role="alert"
+        >
+          {appSelectionErrorMessage}
+        </p>
+      )}
+
+    {!isAppSelectionLoading &&
+      !appSelectionErrorMessage &&
+      !selectedProjectId && (
+        <p className="board-message">
+          Select a project to view its sprint board.
+        </p>
+      )}
+
+    {!isAppSelectionLoading &&
+      !appSelectionErrorMessage &&
+      selectedProjectId &&
+      !selectedSprintId && (
+        <p className="board-message">
+          Select a sprint to view its board.
+        </p>
+      )}
 
       {isLoading && <p className="board-message">Loading board tasks...</p>}
       {errorMessage && <p className="board-message board-message-error">{errorMessage}</p>}
@@ -289,7 +371,9 @@ export function BoardPage() {
 
       <div className="board-grid">
         {taskStatuses.map((column) => {
-          const columnTasks = tasks.filter((task) => task.status === column);
+          const columnTasks = visibleTasks.filter(
+            (task) => task.status === column,
+          );
 
           return (
             <section
