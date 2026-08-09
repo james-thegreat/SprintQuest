@@ -8,6 +8,7 @@ import { API_BASE_URL } from '../api/apiClient';
 import { useBoardStore } from '../stores/useBoardStore';
 import { useGamificationStore } from '../stores/useGamificationStore';
 import type { SprintTask } from '../types/task';
+import { useAppSelectionStore } from '../stores/useAppSelectionStore';
 
 type TaskDeletedPayload = {
   taskId: string;
@@ -26,6 +27,16 @@ let startPromise: Promise<void> | null = null;
 let activeSubscribers = 0;
 let stopTimer: number | null = null;
 
+export function isTaskForActiveSprint(
+  task: SprintTask,
+  activeSprintId: string | null,
+): boolean {
+  return (
+    activeSprintId !== null &&
+    task.sprintId === activeSprintId
+  );
+}
+
 function createBoardHubConnection(): HubConnection {
   const boardConnection = new HubConnectionBuilder()
     .withUrl(boardHubUrl)
@@ -36,6 +47,13 @@ function createBoardHubConnection(): HubConnection {
   boardConnection.on(
     boardEvents.taskCreated,
     (task: SprintTask) => {
+      const activeSprintId =
+        useAppSelectionStore.getState().selectedSprintId;
+
+      if (!isTaskForActiveSprint(task, activeSprintId)) {
+        return;
+      }
+
       useBoardStore.getState().reconcileTask(task);
     },
   );
@@ -43,16 +61,29 @@ function createBoardHubConnection(): HubConnection {
   boardConnection.on(
     boardEvents.taskUpdated,
     (task: SprintTask) => {
+      const activeSprintId =
+        useAppSelectionStore.getState().selectedSprintId;
+
       const boardStore = useBoardStore.getState();
 
       const previousTask = boardStore.tasks.find(
         (currentTask) => currentTask.id === task.id,
       );
 
+      if (!isTaskForActiveSprint(task, activeSprintId)) {
+        if (previousTask) {
+          boardStore.removeTaskById(task.id);
+        }
+
+        return;
+      }
+
       boardStore.reconcileTask(task);
 
       if (previousTask?.status !== task.status) {
-        void useGamificationStore.getState().loadSummary();
+        void useGamificationStore
+          .getState()
+          .loadSummary();
       }
     },
   );

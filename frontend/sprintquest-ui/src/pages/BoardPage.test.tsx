@@ -11,6 +11,7 @@ import { useBoardStore } from '../stores/useBoardStore'
 import { useGamificationStore } from '../stores/useGamificationStore'
 import type { SprintTask } from '../types/task'
 import { BoardPage } from './BoardPage'
+import { useAppSelectionStore } from '../stores/useAppSelectionStore'
 
 vi.mock('../realtime/boardHubConnection', () => ({
   subscribeToBoardHub: vi.fn(() => vi.fn()),
@@ -63,6 +64,11 @@ describe('BoardPage', () => {
       updateTaskStatus: vi.fn().mockResolvedValue(true),
       deleteTask: vi.fn().mockResolvedValue(true),
       setErrorMessage: vi.fn(),
+    })
+
+    useAppSelectionStore.setState({
+      selectedProjectId: 'project-1',
+      selectedSprintId: 'sprint-1',
     })
 
     useGamificationStore.setState({
@@ -274,6 +280,207 @@ describe('BoardPage', () => {
     })
 
     expect(createTask).not.toHaveBeenCalled()
+  })
+
+  it('loads tasks for the selected sprint', async () => {
+    const loadTasks = vi.mocked(
+      useBoardStore.getState().loadTasks,
+    )
+
+    render(<BoardPage />)
+
+    await waitFor(() => {
+      expect(loadTasks).toHaveBeenCalledWith(
+        'sprint-1',
+      )
+    })
+  })
+
+  it('creates a task in the selected sprint', async () => {
+    const createTask = vi.mocked(
+      useBoardStore.getState().createTask,
+    )
+
+    render(<BoardPage />)
+
+    fireEvent.change(
+      screen.getByLabelText('Task title'),
+      {
+        target: {
+          value: 'Create selected sprint task',
+        },
+      },
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Create task',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(createTask).toHaveBeenCalledWith({
+        sprintId: 'sprint-1',
+        title: 'Create selected sprint task',
+        description: null,
+        priority: 1,
+        storyPoints: 1,
+        xpReward: 10,
+      })
+    })
+  })
+
+  it('does not create a task when no sprint is selected', async () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: 'project-1',
+      selectedSprintId: null,
+    })
+
+    const setErrorMessage = vi.mocked(
+      useBoardStore.getState().setErrorMessage,
+    )
+
+    const createTask = vi.mocked(
+      useBoardStore.getState().createTask,
+    )
+
+    render(<BoardPage />)
+
+    fireEvent.change(
+      screen.getByLabelText('Task title'),
+      {
+        target: {
+          value: 'Task without sprint',
+        },
+      },
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Create task',
+      }),
+    )
+
+    await waitFor(() => {
+      expect(setErrorMessage).toHaveBeenCalledWith(
+        'Select a sprint before creating a task.',
+      )
+    })
+
+    expect(createTask).not.toHaveBeenCalled()
+  })
+
+  it('shows a no-sprint state and does not display old board tasks', () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: 'project-1',
+      selectedSprintId: null,
+    })
+
+    const loadTasks = vi.mocked(
+      useBoardStore.getState().loadTasks,
+    )
+
+    render(<BoardPage />)
+
+    expect(
+      screen.getByText(
+        'Select a sprint to view its board.',
+      ),
+    ).toBeInTheDocument()
+
+    expect(loadTasks).not.toHaveBeenCalled()
+
+    expect(
+      screen.queryByText('Plan testing approach'),
+    ).not.toBeInTheDocument()
+
+    expect(
+      screen.queryByText('Write component tests'),
+    ).not.toBeInTheDocument()
+
+    expect(
+      screen.queryByText('Configure Vitest'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows a no-project state when no project is selected', () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: null,
+      selectedSprintId: null,
+    })
+
+    render(<BoardPage />)
+
+    expect(
+      screen.getByText(
+        'Select a project to view its sprint board.',
+      ),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.queryByText(
+        'Select a sprint to view its board.',
+      ),
+    ).not.toBeInTheDocument()
+
+    expect(
+      screen.queryByText('Plan testing approach'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows an app-selection loading state', () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: null,
+      selectedSprintId: null,
+      isProjectsLoading: true,
+      isSprintsLoading: false,
+    })
+
+    render(<BoardPage />)
+
+    expect(
+      screen.getByText(
+        'Loading project and sprint selection...',
+      ),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.queryByText(
+        'Select a project to view its sprint board.',
+      ),
+    ).not.toBeInTheDocument()
+
+    expect(
+      screen.queryByText(
+        'Select a sprint to view its board.',
+      ),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows an app-selection error state', () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: null,
+      selectedSprintId: null,
+      isProjectsLoading: false,
+      isSprintsLoading: false,
+      projectsErrorMessage:
+        'Could not load projects. Please try again.',
+      sprintsErrorMessage: null,
+    })
+
+    render(<BoardPage />)
+
+    expect(
+      screen.getByText(
+        'Could not load projects. Please try again.',
+      ),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.queryByText(
+        'Select a project to view its sprint board.',
+      ),
+    ).not.toBeInTheDocument()
   })
 
 })
