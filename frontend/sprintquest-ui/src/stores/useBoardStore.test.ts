@@ -37,6 +37,17 @@ const secondTask: SprintTask = {
   xpReward: 20,
 }
 
+const otherSprintTask: SprintTask = {
+  id: 'task-3',
+  sprintId: 'sprint-2',
+  title: 'Portfolio task',
+  description: 'Task for another sprint',
+  status: 0,
+  priority: 1,
+  storyPoints: 3,
+  xpReward: 30,
+}
+
 describe('useBoardStore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -274,6 +285,68 @@ describe('useBoardStore', () => {
         useBoardStore.getState().errorMessage,
       ).toBeNull()
     })
+
+    it('ignores a stale task response after another sprint loads', async () => {
+      let resolveFirstRequest!: (
+        tasks: SprintTask[],
+      ) => void
+
+      const firstRequest = new Promise<SprintTask[]>(
+        (resolve) => {
+          resolveFirstRequest = resolve
+        },
+      )
+
+      vi.mocked(getTasksBySprintId)
+        .mockReturnValueOnce(firstRequest)
+        .mockResolvedValueOnce([otherSprintTask])
+
+      const firstLoadPromise = useBoardStore
+        .getState()
+        .loadTasks('sprint-1')
+
+      await useBoardStore
+        .getState()
+        .loadTasks('sprint-2')
+
+      expect(useBoardStore.getState().tasks).toEqual([
+        otherSprintTask,
+      ])
+
+      resolveFirstRequest([
+        backlogTask,
+        secondTask,
+      ])
+
+      await firstLoadPromise
+
+      expect(useBoardStore.getState().tasks).toEqual([
+        otherSprintTask,
+      ])
+    })
+
+  })
+
+  it('clears tasks and reports an error when sprint tasks fail to load', async () => {
+    useBoardStore.setState({
+      tasks: [backlogTask, secondTask],
+    })
+
+    vi.mocked(getTasksBySprintId).mockRejectedValue(
+      new Error('Request failed'),
+    )
+
+    await useBoardStore
+      .getState()
+      .loadTasks('sprint-1')
+
+    expect(useBoardStore.getState().tasks).toEqual([])
+
+    expect(
+      useBoardStore.getState().errorMessage,
+    ).toBe(
+      'Could not load tasks for the selected sprint. Please try again.',
+    )
   })
 
 })

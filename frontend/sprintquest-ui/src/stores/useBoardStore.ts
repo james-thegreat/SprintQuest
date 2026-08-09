@@ -11,52 +11,11 @@ import type {
   TaskStatus,
 } from '../types/task';
 
-const sampleTasks: SprintTask[] = [
-  {
-    id: '1',
-    sprintId: '1',
-    title: 'Design sprint board layout',
-    description: 'Create the first responsive board view for SprintQuest.',
-    status: 4,
-    priority: 2,
-    storyPoints: 3,
-    xpReward: 50,
-  },
-  {
-    id: '2',
-    sprintId: '2',
-    title: 'Connect board to task API',
-    description: 'Load task cards from the backend instead of sample data.',
-    status: 2,
-    priority: 2,
-    storyPoints: 5,
-    xpReward: 80,
-  },
-  {
-    id: '3',
-    sprintId: '3',
-    title: 'Add task create form',
-    description: 'Allow users to create a task from the board page.',
-    status: 1,
-    priority: 1,
-    storyPoints: 3,
-    xpReward: 40,
-  },
-  {
-    id: '4',
-    sprintId: '4',
-    title: 'Review checklist progress UI',
-    description: 'Show checklist progress on each task card.',
-    status: 0,
-    priority: 0,
-    storyPoints: 2,
-    xpReward: 25,
-  },
-];
-
 type TaskStateUpdate =
   | SprintTask[]
   | ((currentTasks: SprintTask[]) => SprintTask[]);
+
+let latestTasksRequestId = 0;
 
 type BoardStore = {
   tasks: SprintTask[];
@@ -80,12 +39,14 @@ type BoardStore = {
 };
 
 export const useBoardStore = create<BoardStore>((set, get) => ({
-  tasks: sampleTasks,
+  tasks: [],
   isLoading: true,
   errorMessage: null,
   isCreating: false,
 
   loadTasks: async (sprintId) => {
+    const requestId = ++latestTasksRequestId;
+
     set({
       isLoading: true,
       errorMessage: null,
@@ -96,20 +57,30 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
         sprintId,
       );
 
+      if (requestId !== latestTasksRequestId) {
+        return;
+      }
+
       set({
         tasks: apiTasks,
         errorMessage: null,
       });
     } catch {
+      if (requestId !== latestTasksRequestId) {
+        return;
+      }
+
       set({
-        tasks: sampleTasks,
+        tasks: [],
         errorMessage:
-          'Could not load tasks from the API. Showing sample board data for now.',
+          'Could not load tasks for the selected sprint. Please try again.',
       });
     } finally {
-      set({
-        isLoading: false,
-      });
+      if (requestId === latestTasksRequestId) {
+        set({
+          isLoading: false,
+        });
+      }
     }
   },
 

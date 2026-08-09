@@ -138,18 +138,34 @@ export function BoardPage() {
 
 
     
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter((task) => task.status === 4).length;
-    const remainingTasks = totalTasks - completedTasks;
+    const visibleTasks = selectedSprintId
+      ? tasks.filter(
+          (task) => task.sprintId === selectedSprintId,
+        )
+      : [];
+
+    const totalTasks = visibleTasks.length;
+
+    const completedTasks = visibleTasks.filter(
+      (task) => task.status === 4,
+    ).length;
+
+    const remainingTasks =
+      totalTasks - completedTasks;
 
     const sprintProgressPercentage =
-        totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+      totalTasks === 0
+        ? 0
+        : Math.round(
+            (completedTasks / totalTasks) * 100,
+          );
 
-
-
-    const completedSprintXp = tasks
-        .filter((task) => task.status === 4)
-        .reduce((total, task) => total + task.xpReward, 0);
+    const completedSprintXp = visibleTasks
+      .filter((task) => task.status === 4)
+      .reduce(
+        (total, task) => total + task.xpReward,
+        0,
+      );
 
   return (
     <section>
@@ -160,6 +176,12 @@ export function BoardPage() {
           Track sprint work across the board and build momentum as tasks move toward Done.
         </p>
       </header>
+
+      {!selectedSprintId && (
+        <p className="board-message">
+          Select a sprint to view its board.
+        </p>
+      )}
 
       {isLoading && <p className="board-message">Loading board tasks...</p>}
       {errorMessage && <p className="board-message board-message-error">{errorMessage}</p>}
@@ -296,7 +318,9 @@ export function BoardPage() {
 
       <div className="board-grid">
         {taskStatuses.map((column) => {
-          const columnTasks = tasks.filter((task) => task.status === column);
+          const columnTasks = visibleTasks.filter(
+            (task) => task.status === column,
+          );
 
           return (
             <section

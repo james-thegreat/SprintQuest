@@ -562,4 +562,61 @@ describe('AppLayout application context', () => {
     );
   });
 
+  it('does not show the static Task Details navigation link', async () => {
+    vi.mocked(getProjects).mockResolvedValue([project]);
+
+    vi.mocked(getSprintsByProjectId).mockResolvedValue([
+      sprint,
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route
+              index
+              element={<div>Dashboard content</div>}
+            />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        useAppSelectionStore.getState().hasInitialised,
+      ).toBe(true);
+    });
+
+    expect(
+      screen.queryByRole('link', {
+        name: 'Task Details',
+      }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Dashboard',
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Projects',
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Sprint Board',
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Progress',
+      }),
+    ).toBeInTheDocument();
+  });
+
 });

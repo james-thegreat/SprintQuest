@@ -370,4 +370,37 @@ describe('BoardPage', () => {
     expect(createTask).not.toHaveBeenCalled()
   })
 
+  it('shows a no-sprint state and does not display old board tasks', () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: 'project-1',
+      selectedSprintId: null,
+    })
+
+    const loadTasks = vi.mocked(
+      useBoardStore.getState().loadTasks,
+    )
+
+    render(<BoardPage />)
+
+    expect(
+      screen.getByText(
+        'Select a sprint to view its board.',
+      ),
+    ).toBeInTheDocument()
+
+    expect(loadTasks).not.toHaveBeenCalled()
+
+    expect(
+      screen.queryByText('Plan testing approach'),
+    ).not.toBeInTheDocument()
+
+    expect(
+      screen.queryByText('Write component tests'),
+    ).not.toBeInTheDocument()
+
+    expect(
+      screen.queryByText('Configure Vitest'),
+    ).not.toBeInTheDocument()
+  })
+
 })
