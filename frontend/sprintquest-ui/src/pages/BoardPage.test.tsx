@@ -403,4 +403,84 @@ describe('BoardPage', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('shows a no-project state when no project is selected', () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: null,
+      selectedSprintId: null,
+    })
+
+    render(<BoardPage />)
+
+    expect(
+      screen.getByText(
+        'Select a project to view its sprint board.',
+      ),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.queryByText(
+        'Select a sprint to view its board.',
+      ),
+    ).not.toBeInTheDocument()
+
+    expect(
+      screen.queryByText('Plan testing approach'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows an app-selection loading state', () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: null,
+      selectedSprintId: null,
+      isProjectsLoading: true,
+      isSprintsLoading: false,
+    })
+
+    render(<BoardPage />)
+
+    expect(
+      screen.getByText(
+        'Loading project and sprint selection...',
+      ),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.queryByText(
+        'Select a project to view its sprint board.',
+      ),
+    ).not.toBeInTheDocument()
+
+    expect(
+      screen.queryByText(
+        'Select a sprint to view its board.',
+      ),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows an app-selection error state', () => {
+    useAppSelectionStore.setState({
+      selectedProjectId: null,
+      selectedSprintId: null,
+      isProjectsLoading: false,
+      isSprintsLoading: false,
+      projectsErrorMessage:
+        'Could not load projects. Please try again.',
+      sprintsErrorMessage: null,
+    })
+
+    render(<BoardPage />)
+
+    expect(
+      screen.getByText(
+        'Could not load projects. Please try again.',
+      ),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.queryByText(
+        'Select a project to view its sprint board.',
+      ),
+    ).not.toBeInTheDocument()
+  })
+
 })

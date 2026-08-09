@@ -55,6 +55,32 @@ export function BoardPage() {
       (state) => state.selectedSprintId,
     );
 
+    const selectedProjectId = useAppSelectionStore(
+      (state) => state.selectedProjectId,
+    );
+
+    const isProjectsLoading = useAppSelectionStore(
+      (state) => state.isProjectsLoading,
+    );
+
+    const isSprintsLoading = useAppSelectionStore(
+      (state) => state.isSprintsLoading,
+    );
+
+    const projectsErrorMessage = useAppSelectionStore(
+  (state) => state.projectsErrorMessage,
+);
+
+const sprintsErrorMessage = useAppSelectionStore(
+  (state) => state.sprintsErrorMessage,
+);
+
+const appSelectionErrorMessage =
+  projectsErrorMessage ?? sprintsErrorMessage;
+
+    const isAppSelectionLoading =
+      isProjectsLoading || isSprintsLoading;
+
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDescription, setNewTaskDescription] = useState('');
     const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>(1);
@@ -177,7 +203,34 @@ export function BoardPage() {
         </p>
       </header>
 
-      {!selectedSprintId && (
+      {isAppSelectionLoading && (
+  <p className="board-message">
+    Loading project and sprint selection...
+  </p>
+)}
+
+    {!isAppSelectionLoading &&
+      appSelectionErrorMessage && (
+        <p
+          className="board-message board-message-error"
+          role="alert"
+        >
+          {appSelectionErrorMessage}
+        </p>
+      )}
+
+    {!isAppSelectionLoading &&
+      !appSelectionErrorMessage &&
+      !selectedProjectId && (
+        <p className="board-message">
+          Select a project to view its sprint board.
+        </p>
+      )}
+
+    {!isAppSelectionLoading &&
+      !appSelectionErrorMessage &&
+      selectedProjectId &&
+      !selectedSprintId && (
         <p className="board-message">
           Select a sprint to view its board.
         </p>
