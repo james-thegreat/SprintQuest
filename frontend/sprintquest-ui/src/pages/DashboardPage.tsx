@@ -1,5 +1,16 @@
 import { useAppSelectionStore } from '../stores/useAppSelectionStore';
 
+const dashboardDateFormatter = new Intl.DateTimeFormat('en-NZ', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+function formatDashboardDate(date: string) {
+  return dashboardDateFormatter.format(new Date(date));
+}
+
 export function DashboardPage() {
   const isProjectsLoading = useAppSelectionStore(
     (state) => state.isProjectsLoading,
@@ -29,6 +40,20 @@ export function DashboardPage() {
   const loadSprints = useAppSelectionStore(
     (state) => state.loadSprints,
   );
+
+  const projects = useAppSelectionStore(
+  (state) => state.projects,
+);
+const sprints = useAppSelectionStore(
+  (state) => state.sprints,
+);
+const selectedSprintId = useAppSelectionStore(
+  (state) => state.selectedSprintId,
+);
+
+const selectedSprint = sprints.find(
+  (sprint) => sprint.id === selectedSprintId,
+);
 
   if (isDashboardLoading) {
     return (
@@ -108,15 +133,29 @@ export function DashboardPage() {
         </article>
 
         <article className="stat-card">
-          <span className="stat-label">Current Sprint</span>
-          <strong>Not started</strong>
-          <p>Create a sprint board in the next milestone.</p>
+          <span className="stat-label">Active Projects</span>
+          <strong>{projects.length}</strong>
+          <p>Projects currently available.</p>
         </article>
 
         <article className="stat-card">
-          <span className="stat-label">XP Earned</span>
-          <strong>0 XP</strong>
-          <p>XP rewards will unlock when tasks are completed.</p>
+          <span className="stat-label">Current Sprint</span>
+
+          {selectedSprint ? (
+            <>
+              <strong>{selectedSprint.name}</strong>
+              <p>
+                {formatDashboardDate(selectedSprint.startDate)}
+                {' – '}
+                {formatDashboardDate(selectedSprint.endDate)}
+              </p>
+            </>
+          ) : (
+            <>
+              <strong>No sprint selected</strong>
+              <p>Select a sprint to view its summary.</p>
+            </>
+          )}
         </article>
       </div>
     </section>

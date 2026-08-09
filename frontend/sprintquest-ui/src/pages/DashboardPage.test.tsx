@@ -126,4 +126,56 @@ describe('DashboardPage', () => {
         expect(loadSprints).toHaveBeenCalledOnce();
         expect(loadSprints).toHaveBeenCalledWith('project-1');
         });
+
+    it('shows the real Project count and selected Sprint summary', () => {
+        useAppSelectionStore.setState({
+            projects: [
+            {
+                id: 'project-1',
+                name: 'SprintQuest',
+                description: 'Gamified project management',
+                createdAt: '2026-07-01T00:00:00Z',
+            },
+            {
+                id: 'project-2',
+                name: 'Portfolio',
+                description: null,
+                createdAt: '2026-07-15T00:00:00Z',
+            },
+            ],
+            selectedProjectId: 'project-1',
+            sprints: [
+            {
+                id: 'sprint-1',
+                projectId: 'project-1',
+                name: 'Dashboard Integration',
+                startDate: '2026-08-01',
+                endDate: '2026-08-14',
+                createdAt: '2026-08-01T00:00:00Z',
+            },
+            ],
+            selectedSprintId: 'sprint-1',
+        });
+
+        render(
+            <MemoryRouter>
+            <DashboardPage />
+            </MemoryRouter>,
+        );
+
+        expect(
+            screen.getByText('2', { selector: 'strong' }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByText('Dashboard Integration', {
+            selector: 'strong',
+            }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByText('1 Aug 2026 – 14 Aug 2026'),
+        ).toBeInTheDocument();
+        });
+
 });
