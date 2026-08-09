@@ -99,4 +99,33 @@ describe('ProjectsPage', () => {
       screen.getByText('Dashboard Integration'),
     ).toBeInTheDocument();
   });
+
+  it('selects a sprint', () => {
+  const selectSprint = vi.fn().mockReturnValue(true);
+
+  useAppSelectionStore.setState({
+    sprints: [
+      {
+        id: 'sprint-1',
+        projectId: 'project-1',
+        name: 'Dashboard Integration',
+        startDate: '2026-08-01T00:00:00Z',
+        endDate: '2026-08-14T00:00:00Z',
+        createdAt: '2026-08-01T00:00:00Z',
+      },
+    ],
+    selectedSprintId: null,
+    selectSprint,
+  });
+
+  render(<ProjectsPage />);
+
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Select Dashboard Integration',
+    }),
+  );
+
+  expect(selectSprint).toHaveBeenCalledWith('sprint-1');
+});
 });

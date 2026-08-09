@@ -6,8 +6,14 @@ export function ProjectsPage() {
     (state) => state.selectedProjectId,
   );
   const sprints = useAppSelectionStore((state) => state.sprints);
+  const selectedSprintId = useAppSelectionStore(
+    (state) => state.selectedSprintId,
+  );
   const selectProject = useAppSelectionStore(
     (state) => state.selectProject,
+  );
+  const selectSprint = useAppSelectionStore(
+    (state) => state.selectSprint,
   );
 
   return (
@@ -37,11 +43,24 @@ export function ProjectsPage() {
 
       <h2>Sprints</h2>
 
-      {sprints.map((sprint) => (
-        <article key={sprint.id}>
-          <h3>{sprint.name}</h3>
-        </article>
-      ))}
+      {sprints.map((sprint) => {
+        const isSelected = sprint.id === selectedSprintId;
+
+        return (
+          <article key={sprint.id}>
+            <h3>{sprint.name}</h3>
+
+            <button
+              type="button"
+              aria-label={`Select ${sprint.name}`}
+              disabled={isSelected}
+              onClick={() => selectSprint(sprint.id)}
+            >
+              {isSelected ? 'Selected' : 'Select sprint'}
+            </button>
+          </article>
+        );
+      })}
     </section>
   );
 }
